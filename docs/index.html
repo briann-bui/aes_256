@@ -388,6 +388,60 @@
 
     .svg-frame svg { min-width: 820px; }
 
+    .timing-summary {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin: 18px 0;
+    }
+
+    .phase-card {
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--surface);
+    }
+
+    .phase-card strong {
+      display: block;
+      color: var(--text);
+      font-size: 14px;
+    }
+
+    .phase-card span {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .timing-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .timing-legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .timing-legend i {
+      display: inline-block;
+      width: 20px;
+      height: 3px;
+      border-radius: 999px;
+      background: var(--accent);
+    }
+
+    .timing-legend .green i { background: var(--ok); }
+    .timing-legend .amber i { background: var(--warn); }
+    .timing-legend .red i { background: var(--error); }
+
     .table-wrap {
       overflow-x: auto;
       margin: 16px 0 22px;
@@ -649,7 +703,8 @@
       .hero-grid,
       .grid-2,
       .grid-3,
-      .grid-4 {
+      .grid-4,
+      .timing-summary {
         grid-template-columns: 1fr;
       }
     }
@@ -950,24 +1005,137 @@
         <section id="timing">
           <p class="section-kicker">Timing and Latency</p>
           <h2>Timing</h2>
-          <div class="grid-3">
-            <div class="card"><h3>Key Expansion</h3><p>Software must wait for <code>STATUS.KEY_READY</code> before issuing data blocks.</p></div>
-            <div class="card"><h3>Block Processing</h3><p>Each 128-bit block uses the AES-256 14-round datapath.</p></div>
-            <div class="card"><h3>Interrupt</h3><p><code>IRQ_STAT.DOUT_VALID</code> or <code>IRQ_STAT.TAG_VALID</code> is set when output is captured.</p></div>
+          <p class="lead">
+            The register wrapper and AES core are synchronous to <code>i_aes_aclk</code>.
+            Valid strobes are <strong>level-based</strong>: <code>w_core_key_valid</code> stays
+            high once all eight KEY words are written (write-mask = <code>0xFF</code>), and
+            <code>w_core_din_valid</code> stays high once all four DIN words complete (mask = <code>0xF</code>).
+            Both masks auto-clear after the core accepts the data.
+            <code>CTRL.START</code> generates a rising-edge <code>w_start_pulse</code> that
+            clears previous <code>DONE</code> status and re-arms output capture.
+          </p>
+
+          <div class="timing-summary">
+            <div class="phase-card"><strong>KEY_EXPAND</strong><span>FSM: KEY_IDLE → KEY_EXPAND → KEY_DONE.<br><code>r_step</code> iterates 0 → 12 = <strong>13 clock cycles</strong>.<br>Then <code>key_ready = 1</code>, <code>rkey_valid = 1</code>.</span></div>
+            <div class="phase-card"><strong>DP_LOAD</strong><span>AddRoundKey with <code>rkey[0]</code>.<br><strong>1 clock cycle</strong>.</span></div>
+            <div class="phase-card"><strong>DP_ROUND</strong><span><code>r_round_cnt</code> 0 → 13 = <strong>14 clock cycles</strong>.<br>SubBytes → ShiftRows → MixColumns → AddRoundKey each round.</span></div>
+            <div class="phase-card"><strong>DP_OUTPUT</strong><span><code>dout_valid = 1</code>, holds until <code>dout_ready</code>.<br><strong>1+ clock cycle</strong>.</span></div>
           </div>
-          <div class="svg-frame" aria-label="Timing diagram">
-            <svg viewBox="0 0 980 310" role="img" aria-label="AES command timing diagram">
-              <defs><style>.wave{fill:none;stroke:#2563EB;stroke-width:3}.clk{fill:none;stroke:#111827;stroke-width:2}.txt{font:700 13px IBM Plex Mono,Consolas,monospace;fill:#111827}.mut{font:500 12px system-ui;fill:#64748B}.anno{fill:#FEF3C7;stroke:#F59E0B}</style></defs>
-              <text x="24" y="35" class="txt">clk</text>
-              <path class="clk" d="M90 30 h20 v-16 h20 v16 h20 v-16 h20 v16 h20 v-16 h20 v16 h20 v-16 h20 v16 h20 v-16 h20 v16 h20 v-16 h20 v16 h20 v-16 h20 v16 h20 v-16 h20 v16 h20 v-16 h20 v16 h20 v-16 h20 v16 h20 v-16 h20 v16 h20 v-16 h20 v16 h20"/>
-              <text x="24" y="92" class="txt">key_valid</text><path class="wave" d="M120 92 h70 v-28 h70 v28 h590"/>
-              <text x="24" y="142" class="txt">key_ready</text><path class="wave" d="M120 142 h175 v28 h150 v-28 h405"/>
-              <text x="24" y="192" class="txt">din_valid</text><path class="wave" d="M120 192 h360 v-28 h70 v28 h300"/>
-              <text x="24" y="242" class="txt">dout_valid</text><path class="wave" d="M120 242 h565 v-28 h70 v28 h95"/>
-              <rect x="292" y="106" width="150" height="78" rx="8" class="anno"/><text x="312" y="139" class="mut">Key expansion</text><text x="312" y="160" class="mut">poll KEY_READY</text>
-              <rect x="552" y="166" width="130" height="72" rx="8" class="anno"/><text x="572" y="197" class="mut">14-round</text><text x="572" y="218" class="mut">block datapath</text>
-              <text x="690" y="268" class="mut">Read DOUT, clear IRQ_STAT</text>
-            </svg>
+
+          <div class="callout"><strong>Cycle Budget</strong>
+            Total single-block latency = 13 (key expand) + 1 (load) + 14 (rounds) + 1 (output) = <strong>29 clock cycles</strong> from key write completion. Subsequent blocks on the same key skip key expansion and take 1 + 14 + 1 = <strong>16 clock cycles</strong>.
+          </div>
+
+          <h3>1. Key Expansion Timing</h3>
+          <p>After firmware writes all eight KEY registers, <code>r_key_wr_mask</code> reaches <code>0xFF</code>
+            and drives <code>w_core_key_valid</code> high (level). The key expansion FSM takes
+            13 cycles (<code>r_step = 0 → 12</code>). On completion, <code>key_ready</code> and
+            <code>rkey_valid</code> assert; the write mask auto-clears.
+          </p>
+          <div class="svg-frame" aria-label="Key Expansion timing diagram">
+            <script type="WaveDrom">
+            { "signal": [
+              { "name": "i_aes_aclk",        "wave": "p.................." },
+              {},
+              ["AXI Reg",
+                { "name": "KEY7 write (last)",  "wave": "010................" },
+                { "name": "r_key_wr_mask",     "wave": "=.=................", "data": ["0x7F","0xFF"] },
+                { "name": "w_core_key_valid",  "wave": "0.1.0.............." }
+              ],
+              {},
+              ["Key Expansion FSM",
+                { "name": "r_fsm",             "wave": "=.=..............=.", "data": ["KEY_IDLE","KEY_EXPAND","KEY_DONE"] },
+                { "name": "r_step[3:0]",       "wave": "x.3456789=====x...", "data": ["0","1","2","3","4","5","6","...","10","11","12"] },
+                { "name": "o_aes_key_ready",   "wave": "1.0..............1." },
+                { "name": "o_aes_rkey_valid",  "wave": "0................1." }
+              ]
+            ],
+            "head": { "text": "Key Expansion Timing (aes256_key_expansion) — 13 clock cycles", "tick": 0 },
+            "config": { "hscale": 1.4 }
+            }
+            </script>
+          </div>
+
+          <h3>2. Single-Block ECB Encrypt (Full Flow)</h3>
+          <p>Complete flow from reset: write CTRL → write KEY → wait key expansion → write DIN → START pulse → 
+            DP_LOAD → 14 rounds → DP_OUTPUT → DONE. 
+            <code>STATUS.BUSY</code> = <code>(r_busy && !key_ready) || (rkey_valid == 0)</code>.
+          </p>
+          <div class="svg-frame" aria-label="Single-block ECB encrypt timing diagram">
+            <script type="WaveDrom">
+            { "signal": [
+              { "name": "i_aes_aclk",         "wave": "p............................." },
+              {},
+              ["AXI Register Interface",
+                { "name": "w_core_key_valid",  "wave": "0.1.0........................." },
+                { "name": "o_aes_key_ready",   "wave": "0................1............" },
+                { "name": "w_core_din_valid",  "wave": "0.................1.0........." },
+                { "name": "w_start_pulse",     "wave": "0..................10..........", "data": [] }
+              ],
+              {},
+              ["Key Expansion",
+                { "name": "key r_fsm",          "wave": "=.=..............=.............", "data": ["IDLE","EXPAND","DONE"] }
+              ],
+              {},
+              ["Encrypt Datapath",
+                { "name": "dp r_fsm",           "wave": "=...................=.=......=.=", "data": ["DP_IDLE","LOAD","ROUND","OUTPUT","IDLE"] },
+                { "name": "r_round_cnt[3:0]",  "wave": "x.....................345679==x.", "data": ["0","1","2","3","4","...","12","13"] },
+                { "name": "o_aes_dout_valid",  "wave": "0............................1.0" },
+                { "name": "o_aes_irq",         "wave": "0............................1.0" }
+              ],
+              {},
+              ["Status",
+                { "name": "STATUS.BUSY",       "wave": "1................0...1........0." },
+                { "name": "STATUS.DONE",       "wave": "0............................1.0" }
+              ]
+            ],
+            "head": { "text": "Single-Block ECB Encrypt — Full AXI Flow (13+1+14+1 = 29 cycles)", "tick": 0 },
+            "config": { "hscale": 1.2 }
+            }
+            </script>
+          </div>
+
+          <h3>3. Back-to-Back Block Pipeline</h3>
+          <p>After key expansion completes, subsequent blocks skip key loading.
+            The datapath can accept a new <code>din_valid</code> in the same cycle it outputs
+            (<code>DP_OUTPUT → DP_LOAD</code> shortcut when <code>din_valid && rkey_valid</code>).
+            Each additional block takes 16 cycles.
+          </p>
+          <div class="svg-frame" aria-label="Back-to-back block pipeline timing diagram">
+            <script type="WaveDrom">
+            { "signal": [
+              { "name": "i_aes_aclk",         "wave": "p....................................." },
+              {},
+              ["Block A",
+                { "name": "din_valid (A)",     "wave": "01.0.................................." },
+                { "name": "dp_fsm",            "wave": "=.=.=................=.................", "data": ["IDLE","LOAD","ROUND","OUTPUT"] },
+                { "name": "round_cnt",         "wave": "x...3456789=====3===x.................", "data": ["0","1","2","3","4","...","11","12","13"] },
+                { "name": "dout_valid (A)",    "wave": "0....................1.0..............." }
+              ],
+              {},
+              ["Block B (back-to-back)",
+                { "name": "din_valid (B)",     "wave": "0....................1.0..............." },
+                { "name": "dp_fsm",            "wave": "=....................=.=................=.", "data": ["(wait)","LOAD","ROUND","OUTPUT"] },
+                { "name": "round_cnt",         "wave": "x......................3456789=====3===x.", "data": ["0","1","2","3","4","...","11","12","13"] },
+                { "name": "dout_valid (B)",    "wave": "0......................................1." }
+              ],
+              {},
+              ["Handshake",
+                { "name": "r_done",            "wave": "0....................10.................1." },
+                { "name": "o_aes_irq",         "wave": "0....................10.................1." }
+              ]
+            ],
+            "head": { "text": "Back-to-Back Blocks (same key) — 16 cycles per block", "tick": 0 },
+            "config": { "hscale": 1.1 }
+            }
+            </script>
+          </div>
+
+          <div class="timing-legend">
+            <span><i></i>Control/Data signals</span>
+            <span class="green"><i></i>Ready/Valid handshake</span>
+            <span class="amber"><i></i>Internal FSM state</span>
+            <span class="red"><i></i>Output / IRQ</span>
           </div>
         </section>
 
@@ -1125,5 +1293,10 @@
     });
     toTop.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
   </script>
+
+  <!-- WaveDrom rendering library -->
+  <script src="https://cdn.jsdelivr.net/npm/wavedrom@3.5.0/skins/default.js" type="text/javascript"></script>
+  <script src="https://cdn.jsdelivr.net/npm/wavedrom@3.5.0/wavedrom.min.js" type="text/javascript"></script>
+  <script>WaveDrom.ProcessAll();</script>
 </body>
 </html>
