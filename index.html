@@ -32,13 +32,30 @@
 
       <main class="main">
         <header class="hero">
-          <p class="eyebrow">SystemVerilog IP Datasheet</p>
-          <h2>AES-256 Cryptographic IP Core</h2>
-          <p class="hero-copy">
-            Synthesizable AES-256 encryption core with AXI4-Lite register access,
-            128-bit block processing, multi-mode operation, interrupt generation,
-            and a UVM verification environment.
-          </p>
+          <div class="hero-inner">
+            <div class="hero-main">
+              <p class="eyebrow">SystemVerilog IP Datasheet</p>
+              <h2>AES-256 Cryptographic IP Core</h2>
+              <p class="hero-copy">
+                Synthesizable AES-256 encryption accelerator with AXI4-Lite register access,
+                128-bit block processing, multi-mode operation, interrupt generation,
+                and UVM verification collateral.
+              </p>
+              <div class="hero-actions" aria-label="Primary actions">
+                <a class="button primary" href="#architecture">View Architecture</a>
+                <a class="button" href="#registers">Register Map</a>
+                <a class="button" href="#verification">Verification</a>
+              </div>
+            </div>
+            <div class="hero-panel" aria-label="Release summary">
+              <div class="panel-kicker">IP Release</div>
+              <div class="panel-title">v1.0.0</div>
+              <div class="panel-row"><span>Interface</span><strong>AXI4-Lite</strong></div>
+              <div class="panel-row"><span>Core</span><strong>AES-256</strong></div>
+              <div class="panel-row"><span>Regression</span><strong class="pass">Clean</strong></div>
+              <code>make run UVM_TEST=aes256_all_test</code>
+            </div>
+          </div>
           <div class="quick-spec" aria-label="Quick specifications">
             <div><span>Algorithm</span><strong>AES-256</strong></div>
             <div><span>Interface</span><strong>AXI4-Lite</strong></div>
@@ -48,7 +65,16 @@
         </header>
 
         <div class="content">
+          <section class="status-strip" aria-label="Project status">
+            <div><span>RTL</span><strong>SystemVerilog</strong></div>
+            <div><span>Lint</span><strong>Verilator</strong></div>
+            <div><span>Simulation</span><strong>ModelSim</strong></div>
+            <div><span>Verification</span><strong>UVM</strong></div>
+            <div><span>Target</span><strong>FPGA / ASIC</strong></div>
+          </section>
+
           <section id="overview">
+            <p class="section-label">Product Brief</p>
             <h2>Overview</h2>
             <p class="lead">
               This IP implements an AES-256 hardware accelerator intended for SoC and FPGA integration.
@@ -72,9 +98,18 @@
                 <p>The control plane uses 32-bit AXI4-Lite words and an 8-bit address space.</p>
               </div>
             </div>
+            <div class="mode-cloud" aria-label="Supported modes">
+              <span>ECB</span>
+              <span>CBC</span>
+              <span>CTR</span>
+              <span>CFB</span>
+              <span>OFB</span>
+              <span>GCM</span>
+            </div>
           </section>
 
           <section id="architecture">
+            <p class="section-label">Microarchitecture</p>
             <h2>Architecture</h2>
             <p class="lead">
               The top-level wrapper contains an AXI4-Lite register interface and an AES core. Software
@@ -102,6 +137,7 @@
           </section>
 
           <section id="interface">
+            <p class="section-label">Integration Boundary</p>
             <h2>Top Interface</h2>
             <p class="lead">
               The integration boundary is <code>aes256_wrapper</code>. Clock and reset use
@@ -145,6 +181,7 @@
           </section>
 
           <section id="registers">
+            <p class="section-label">Software Contract</p>
             <h2>Register Map</h2>
             <p class="lead">
               All registers are 32-bit wide and word aligned. Multiword fields are exposed as consecutive
@@ -207,12 +244,13 @@
           </section>
 
           <section id="programming">
+            <p class="section-label">Firmware Flow</p>
             <h2>Programming Model</h2>
             <p class="lead">
               Software operates the IP as a register-driven block accelerator. Program key material first,
               wait for key expansion, then issue one 128-bit block command at a time.
             </p>
-            <pre><code>1. Write CTRL with START=0, ENC_DEC, and MODE.
+            <pre class="command-panel"><code>1. Write CTRL with START=0, ENC_DEC, and MODE.
 2. Write KEY0..KEY7.
 3. Poll STATUS.KEY_READY until it is set.
 4. For IV-based modes, write IV0..IV3.
@@ -229,6 +267,7 @@
           </section>
 
           <section id="modes">
+            <p class="section-label">Crypto Modes</p>
             <h2>Modes</h2>
             <div class="table-wrap">
               <table>
@@ -248,6 +287,7 @@
           </section>
 
           <section id="timing">
+            <p class="section-label">Operational Timing</p>
             <h2>Timing</h2>
             <p class="lead">
               The core is an iterative implementation optimized for compact RTL and deterministic control.
@@ -270,6 +310,7 @@
           </section>
 
           <section id="verification">
+            <p class="section-label">Verification Collateral</p>
             <h2>Verification</h2>
             <p class="lead">
               The verification environment is organized as a UVM AXI4-Lite testbench with agent, driver,
@@ -294,7 +335,7 @@
                 </tbody>
               </table>
             </div>
-            <pre><code>make lint
+            <pre class="command-panel"><code>make lint
 make compile
 make run UVM_TEST=aes256_all_test
 make run UVM_TEST=aes256_ecb_vector_test
@@ -306,6 +347,7 @@ make coverage UVM_TEST=aes256_all_test</code></pre>
           </section>
 
           <section id="integration">
+            <p class="section-label">SoC Bring-Up</p>
             <h2>Integration Notes</h2>
             <div class="grid-2">
               <div class="card">
@@ -345,6 +387,7 @@ make coverage UVM_TEST=aes256_all_test</code></pre>
           </section>
 
           <section id="deliverables">
+            <p class="section-label">Package Contents</p>
             <h2>Deliverables</h2>
             <div class="table-wrap">
               <table>
@@ -361,11 +404,11 @@ make coverage UVM_TEST=aes256_all_test</code></pre>
               </table>
             </div>
             <h3>GitHub Pages Setup</h3>
-            <pre><code>Repository Settings
+            <pre class="command-panel"><code>Repository Settings
 Pages
 Build and deployment: Deploy from a branch
-Branch: main
-Folder: /docs</code></pre>
+Branch: gh-pages
+Folder: /</code></pre>
           </section>
 
           <footer class="footer">
