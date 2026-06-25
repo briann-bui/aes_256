@@ -1,424 +1,1129 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>AES-256 Cryptographic IP Core Documentation</title>
-    <meta name="description" content="Vendor-style architecture, register, integration, and verification guide for the AES-256 IP core.">
-    <link rel="stylesheet" href="assets/styles.css">
-  </head>
-  <body>
-    <div class="layout">
-      <aside class="sidebar">
-        <div class="brand">
-          <div class="brand-mark">AES</div>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AES-256 Cryptographic IP Core | Vendor Documentation</title>
+  <meta name="description" content="Complete vendor-style documentation for the AES-256 SystemVerilog RTL IP core with AXI4-Lite register interface and UVM verification.">
+  <style>
+    :root {
+      --sidebar-bg: #0F1117;
+      --sidebar-hover: #1E2230;
+      --main-bg: #FFFFFF;
+      --surface: #F8FAFC;
+      --surface-2: #EEF2F7;
+      --text: #111827;
+      --muted: #64748B;
+      --line: #D8DEE8;
+      --accent: #2563EB;
+      --ok: #16A34A;
+      --error: #DC2626;
+      --warn: #F59E0B;
+      --purple: #7C3AED;
+      --code-bg: #0D1117;
+      --code-bg-2: #151B23;
+      --shadow: 0 18px 46px rgba(15, 23, 42, 0.10);
+      --mono: "IBM Plex Mono", Consolas, "Cascadia Code", monospace;
+      --sans: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    [data-theme="dark"] {
+      --main-bg: #0B0F17;
+      --surface: #111827;
+      --surface-2: #1E293B;
+      --text: #E5E7EB;
+      --muted: #A7B0BE;
+      --line: #263244;
+      --shadow: 0 18px 46px rgba(0, 0, 0, 0.36);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      color: var(--text);
+      background: var(--main-bg);
+      font: 15px/1.65 var(--sans);
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .app {
+      display: grid;
+      grid-template-columns: 304px minmax(0, 1fr);
+      min-height: 100vh;
+    }
+
+    .mobile-topbar {
+      display: none;
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 58px;
+      padding: 10px 14px;
+      color: #fff;
+      background: var(--sidebar-bg);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .hamburger,
+    .icon-button,
+    .copy-btn,
+    .to-top {
+      cursor: pointer;
+      border: 0;
+      font: inherit;
+    }
+
+    .hamburger,
+    .icon-button {
+      display: inline-grid;
+      place-items: center;
+      min-width: 38px;
+      min-height: 38px;
+      border-radius: 8px;
+      color: #F8FAFC;
+      background: var(--sidebar-hover);
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: 24px 18px;
+      color: #D7DEE9;
+      background: var(--sidebar-bg);
+      overflow-y: auto;
+    }
+
+    .brand {
+      display: grid;
+      grid-template-columns: 44px 1fr;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 22px;
+    }
+
+    .logo {
+      display: grid;
+      place-items: center;
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      color: #fff;
+      background: linear-gradient(135deg, var(--accent), var(--ok));
+      font: 900 13px/1 var(--mono);
+      letter-spacing: 0;
+    }
+
+    .brand h1 {
+      margin: 0;
+      color: #fff;
+      font-size: 15px;
+      line-height: 1.25;
+    }
+
+    .brand p {
+      margin: 3px 0 0;
+      color: #98A2B3;
+      font-size: 12px;
+    }
+
+    .theme-toggle {
+      width: 100%;
+      margin: 0 0 18px;
+      padding: 10px 12px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      color: #E5E7EB;
+      background: #151923;
+      text-align: left;
+      font-weight: 700;
+    }
+
+    .theme-toggle:hover { background: var(--sidebar-hover); }
+
+    .nav-title {
+      margin: 18px 8px 8px;
+      color: #8B95A7;
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+    }
+
+    .nav a {
+      display: grid;
+      grid-template-columns: 18px 1fr;
+      gap: 8px;
+      align-items: center;
+      padding: 8px 10px;
+      border-radius: 8px;
+      color: #CBD5E1;
+      font-size: 14px;
+    }
+
+    .nav a:hover,
+    .nav a.active {
+      color: #FFFFFF;
+      background: var(--sidebar-hover);
+      text-decoration: none;
+    }
+
+    .nav .stable { color: var(--ok); }
+    .nav .exp { color: var(--warn); }
+
+    .sidebar-footer {
+      margin-top: auto;
+      padding: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-radius: 10px;
+      background: #151923;
+    }
+
+    .sidebar-footer span {
+      display: block;
+      color: #8B95A7;
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .side-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .main {
+      min-width: 0;
+      background: var(--main-bg);
+    }
+
+    .hero {
+      padding: 58px clamp(22px, 6vw, 76px) 36px;
+      color: #fff;
+      background:
+        linear-gradient(120deg, rgba(15, 17, 23, 0.98), rgba(15, 17, 23, 0.88)),
+        radial-gradient(circle at 80% 18%, rgba(37, 99, 235, 0.34), transparent 34%),
+        #0F1117;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 340px;
+      gap: 34px;
+      align-items: end;
+      max-width: 1220px;
+    }
+
+    .eyebrow,
+    .section-kicker {
+      margin: 0 0 10px;
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .hero .eyebrow { color: #93C5FD; }
+
+    .hero h2 {
+      margin: 0;
+      max-width: 860px;
+      font-size: clamp(36px, 5vw, 68px);
+      line-height: 1.02;
+      letter-spacing: 0;
+    }
+
+    .hero-copy {
+      max-width: 790px;
+      margin: 18px 0 0;
+      color: #CBD5E1;
+      font-size: 18px;
+    }
+
+    .tag-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 24px;
+    }
+
+    .tag,
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 26px;
+      padding: 4px 9px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 900;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .tag {
+      color: #DBEAFE;
+      border: 1px solid rgba(147, 197, 253, 0.38);
+      background: rgba(37, 99, 235, 0.16);
+    }
+
+    .badge.blue { color: #DBEAFE; background: #1D4ED8; }
+    .badge.gray { color: #334155; background: #E2E8F0; }
+    .badge.amber { color: #451A03; background: #FBBF24; }
+    .badge.purple { color: #F3E8FF; background: var(--purple); }
+    .badge.green { color: #DCFCE7; background: var(--ok); }
+    .badge.red { color: #FEE2E2; background: var(--error); }
+
+    .hero-panel {
+      padding: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.06);
+      box-shadow: 0 22px 60px rgba(0, 0, 0, 0.25);
+    }
+
+    .panel-title {
+      margin: 0 0 14px;
+      font-size: 28px;
+      font-weight: 900;
+    }
+
+    .panel-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 10px 0;
+      border-top: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .panel-row span { color: #AAB5C4; }
+    .panel-row strong { color: #fff; }
+
+    .content {
+      padding: 36px clamp(22px, 6vw, 76px) 80px;
+    }
+
+    section {
+      max-width: 1180px;
+      margin: 0 auto 56px;
+      scroll-margin-top: 24px;
+    }
+
+    section h2 {
+      margin: 0 0 12px;
+      color: var(--text);
+      font-size: 32px;
+      line-height: 1.18;
+    }
+
+    .lead {
+      max-width: 920px;
+      margin: 0 0 18px;
+      color: var(--muted);
+      font-size: 16px;
+    }
+
+    .grid-2,
+    .grid-3,
+    .grid-4 {
+      display: grid;
+      gap: 16px;
+    }
+
+    .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+    .card {
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+
+    .metric {
+      color: var(--accent);
+      font-size: 36px;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .metric-label {
+      margin: 8px 0 0;
+      color: var(--text);
+      font-size: 16px;
+      font-weight: 900;
+    }
+
+    .card h3 {
+      margin: 0 0 8px;
+      font-size: 18px;
+    }
+
+    .card p { margin: 0; color: var(--muted); }
+
+    .svg-frame {
+      margin: 18px 0;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+      overflow-x: auto;
+    }
+
+    .svg-frame svg { min-width: 820px; }
+
+    .table-wrap {
+      overflow-x: auto;
+      margin: 16px 0 22px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--main-bg);
+      box-shadow: var(--shadow);
+    }
+
+    table {
+      width: 100%;
+      min-width: 760px;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      color: var(--text);
+      background: var(--surface-2);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    tr:last-child td { border-bottom: 0; }
+    tbody tr:hover td { background: var(--surface); }
+
+    code, .mono {
+      font-family: var(--mono);
+      font-size: 0.93em;
+    }
+
+    code {
+      padding: 2px 5px;
+      border-radius: 5px;
+      color: var(--text);
+      background: var(--surface-2);
+    }
+
+    .dir-in { color: var(--accent); font-weight: 900; }
+    .dir-out { color: var(--ok); font-weight: 900; }
+
+    .pre-wrap {
+      position: relative;
+      margin: 16px 0;
+    }
+
+    pre {
+      overflow-x: auto;
+      margin: 0;
+      padding: 18px;
+      border: 1px solid #263244;
+      border-radius: 12px;
+      color: #D1D9E6;
+      background: var(--code-bg);
+      box-shadow: var(--shadow);
+    }
+
+    pre code {
+      padding: 0;
+      color: inherit;
+      background: transparent;
+      font-family: var(--mono);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .terminal code .prompt { color: #22C55E; }
+    .terminal code .cmd { color: #E5E7EB; }
+    .terminal code .flag { color: #93C5FD; }
+
+    .reg-code {
+      counter-reset: line;
+      background: var(--code-bg-2);
+    }
+
+    .reg-code code span {
+      display: block;
+      counter-increment: line;
+    }
+
+    .reg-code code span::before {
+      content: counter(line);
+      display: inline-block;
+      width: 28px;
+      margin-right: 14px;
+      color: #6B7280;
+      text-align: right;
+      user-select: none;
+    }
+
+    .copy-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      padding: 6px 9px;
+      border-radius: 7px;
+      color: #E5E7EB;
+      background: #263244;
+      font: 700 12px/1 var(--sans);
+    }
+
+    .copy-btn:hover { background: #334155; }
+
+    .flow {
+      display: grid;
+      gap: 12px;
+      margin: 18px 0;
+      padding: 0;
+      list-style: none;
+      counter-reset: flow;
+    }
+
+    .flow li {
+      counter-increment: flow;
+      display: grid;
+      grid-template-columns: 42px 1fr;
+      gap: 12px;
+      align-items: start;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--surface);
+    }
+
+    .flow li::before {
+      content: counter(flow);
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      color: #fff;
+      background: var(--accent);
+      font-weight: 900;
+    }
+
+    .callout {
+      margin: 18px 0;
+      padding: 14px 16px;
+      border: 1px solid var(--line);
+      border-left: 5px solid var(--accent);
+      border-radius: 12px;
+      background: var(--surface);
+    }
+
+    .callout strong {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--text);
+    }
+
+    .callout.warn { border-left-color: var(--warn); }
+    .callout.security { border-left-color: var(--error); }
+
+    .mode-badge {
+      display: inline-flex;
+      min-width: 54px;
+      justify-content: center;
+      padding: 4px 8px;
+      border-radius: 7px;
+      color: #fff;
+      font: 900 12px/1 var(--mono);
+    }
+
+    .m-ecb { background: #2563EB; }
+    .m-cbc { background: #16A34A; }
+    .m-ctr { background: #0891B2; }
+    .m-cfb { background: #7C3AED; }
+    .m-ofb { background: #F59E0B; color: #111827; }
+    .m-gcm { background: #DC2626; }
+
+    .bitfield {
+      margin: 14px 0 24px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--surface);
+      overflow: hidden;
+    }
+
+    .bits {
+      display: flex;
+      min-width: 720px;
+      border-bottom: 1px solid var(--line);
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .bits span {
+      flex: 1;
+      padding: 7px 0;
+      text-align: center;
+      border-right: 1px solid var(--line);
+    }
+
+    .bits span:last-child { border-right: 0; }
+
+    .fields {
+      display: flex;
+      min-width: 720px;
+      min-height: 54px;
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .field {
+      display: grid;
+      place-items: center;
+      padding: 8px;
+      color: #fff;
+      border-right: 1px solid rgba(255, 255, 255, 0.50);
+      text-align: center;
+    }
+
+    .field:last-child { border-right: 0; }
+    .field.rsvd { color: #475569; background: #CBD5E1; }
+    .field.ctrl { background: var(--accent); }
+    .field.ok { background: var(--ok); }
+    .field.err { background: var(--error); }
+    .field.warnf { color: #111827; background: var(--warn); }
+    .field.purple { background: var(--purple); }
+
+    .to-top {
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      z-index: 50;
+      display: none;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      color: #fff;
+      background: var(--accent);
+      box-shadow: var(--shadow);
+      font-weight: 900;
+    }
+
+    .to-top.show { display: block; }
+
+    footer {
+      max-width: 1180px;
+      margin: 62px auto 0;
+      padding-top: 18px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    @media (max-width: 980px) {
+      .hero-grid,
+      .grid-2,
+      .grid-3,
+      .grid-4 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 767px) {
+      .app { display: block; }
+      .mobile-topbar { display: flex; }
+      .sidebar {
+        position: fixed;
+        inset: 58px auto 0 0;
+        z-index: 45;
+        width: min(86vw, 320px);
+        transform: translateX(-105%);
+        transition: transform 180ms ease;
+      }
+      .sidebar.open { transform: translateX(0); }
+      .hero { padding: 36px 18px 28px; }
+      .content { padding: 28px 18px 68px; }
+      .hero-panel { max-width: none; }
+      .tag-grid { gap: 8px; }
+      section h2 { font-size: 28px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="mobile-topbar">
+    <button class="hamburger" id="menuButton" aria-label="Open navigation">☰</button>
+    <strong>AES-256 IP Docs</strong>
+    <button class="icon-button" id="mobileThemeButton" aria-label="Toggle dark mode">◐</button>
+  </div>
+
+  <div class="app">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="logo">AES</div>
+        <div>
           <h1>AES-256 Cryptographic IP Core</h1>
-          <p>Architecture, software register interface, integration guide, and UVM verification plan.</p>
+          <p>Vendor documentation</p>
         </div>
-        <div class="nav-title">Documentation</div>
-        <nav class="nav" aria-label="Main navigation">
-          <a href="#overview">Overview</a>
-          <a href="#architecture">Architecture</a>
-          <a href="#interface">Top Interface</a>
-          <a href="#registers">Register Map</a>
-          <a href="#programming">Programming Model</a>
-          <a href="#modes">Modes</a>
-          <a href="#timing">Timing</a>
-          <a href="#verification">Verification</a>
-          <a href="#integration">Integration Notes</a>
-          <a href="#deliverables">Deliverables</a>
-        </nav>
-      </aside>
+      </div>
 
-      <main class="main">
-        <header class="hero">
-          <div class="hero-inner">
-            <div class="hero-main">
-              <p class="eyebrow">SystemVerilog IP Datasheet</p>
-              <h2>AES-256 Cryptographic IP Core</h2>
-              <p class="hero-copy">
-                Synthesizable AES-256 encryption accelerator with AXI4-Lite register access,
-                128-bit block processing, multi-mode operation, interrupt generation,
-                and UVM verification collateral.
-              </p>
-              <div class="hero-actions" aria-label="Primary actions">
-                <a class="button primary" href="#architecture">View Architecture</a>
-                <a class="button" href="#registers">Register Map</a>
-                <a class="button" href="#verification">Verification</a>
-              </div>
-            </div>
-            <div class="hero-panel" aria-label="Release summary">
-              <div class="panel-kicker">IP Release</div>
-              <div class="panel-title">v1.0.0</div>
-              <div class="panel-row"><span>Interface</span><strong>AXI4-Lite</strong></div>
-              <div class="panel-row"><span>Core</span><strong>AES-256</strong></div>
-              <div class="panel-row"><span>Regression</span><strong class="pass">Clean</strong></div>
-              <code>make run UVM_TEST=aes256_all_test</code>
+      <button class="theme-toggle" id="themeButton">Toggle dark mode</button>
+
+      <div class="nav-title">Navigation</div>
+      <nav class="nav" id="nav">
+        <a href="#overview"><span class="stable">✓</span><span>Overview</span></a>
+        <a href="#architecture"><span class="stable">✓</span><span>Architecture</span></a>
+        <a href="#top-interface"><span class="stable">✓</span><span>Top Interface</span></a>
+        <a href="#register-map"><span class="stable">✓</span><span>Register Map</span></a>
+        <a href="#programming-model"><span class="stable">✓</span><span>Quick Start</span></a>
+        <a href="#programming-model"><span class="stable">✓</span><span>Programming Model</span></a>
+        <a href="#modes"><span class="exp">⚠</span><span>Modes</span></a>
+        <a href="#timing"><span class="stable">✓</span><span>Timing</span></a>
+        <a href="#verification"><span class="stable">✓</span><span>Verification</span></a>
+        <a href="#integration-notes"><span class="stable">✓</span><span>Integration Notes</span></a>
+        <a href="#deliverables"><span class="stable">✓</span><span>Deliverables</span></a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <span>IP Version</span>
+        <div class="side-badges">
+          <span class="badge blue">0x0001_0000</span>
+          <span class="badge green">CLEAN</span>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="hero">
+        <div class="hero-grid">
+          <div>
+            <p class="eyebrow">SystemVerilog RTL IP Datasheet</p>
+            <h2>AES-256 Cryptographic IP Core</h2>
+            <p class="hero-copy">
+              Synthesizable AES-256 accelerator with AXI4-Lite register access,
+              128-bit block datapath, six operating modes, interrupt support, and
+              a UVM verification environment.
+            </p>
+            <div class="tag-grid" aria-label="Key specifications">
+              <span class="tag">AES-256</span>
+              <span class="tag">128-bit block</span>
+              <span class="tag">256-bit key</span>
+              <span class="tag">AXI4-Lite</span>
+              <span class="tag">ECB/CBC/CTR/CFB/OFB/GCM</span>
+              <span class="tag">UVM verified</span>
             </div>
           </div>
-          <div class="quick-spec" aria-label="Quick specifications">
-            <div><span>Algorithm</span><strong>AES-256</strong></div>
-            <div><span>Interface</span><strong>AXI4-Lite</strong></div>
-            <div><span>Data Block</span><strong>128 bit</strong></div>
-            <div><span>IP Version</span><strong>0x0001_0000</strong></div>
+          <div class="hero-panel">
+            <div class="panel-title">IP Release</div>
+            <div class="panel-row"><span>Version</span><strong>0x0001_0000</strong></div>
+            <div class="panel-row"><span>Interface</span><strong>AXI4-Lite</strong></div>
+            <div class="panel-row"><span>Core algorithm</span><strong>AES-256</strong></div>
+            <div class="panel-row"><span>Regression</span><span class="badge green">CLEAN</span></div>
+            <div class="pre-wrap terminal">
+              <pre><code><span class="prompt">$</span> <span class="cmd">make run</span> <span class="flag">UVM_TEST=aes256_all_test</span></code></pre>
+            </div>
           </div>
-        </header>
-
-        <div class="content">
-          <section class="status-strip" aria-label="Project status">
-            <div><span>RTL</span><strong>SystemVerilog</strong></div>
-            <div><span>Lint</span><strong>Verilator</strong></div>
-            <div><span>Simulation</span><strong>ModelSim</strong></div>
-            <div><span>Verification</span><strong>UVM</strong></div>
-            <div><span>Target</span><strong>FPGA / ASIC</strong></div>
-          </section>
-
-          <section id="overview">
-            <p class="section-label">Product Brief</p>
-            <h2>Overview</h2>
-            <p class="lead">
-              This IP implements an AES-256 hardware accelerator intended for SoC and FPGA integration.
-              The software-facing wrapper exposes a compact AXI4-Lite register map, while the internal
-              core uses a 128-bit block datapath, AES-256 key expansion, and per-mode processing blocks.
-            </p>
-            <div class="grid-3">
-              <div class="card">
-                <div class="metric">6</div>
-                <h3>Operating Modes</h3>
-                <p>ECB, CBC, CTR, CFB, OFB, and GCM are decoded from the 3-bit mode field.</p>
-              </div>
-              <div class="card">
-                <div class="metric">14</div>
-                <h3>AES Rounds</h3>
-                <p>AES-256 uses 14 algorithm rounds with expanded round keys held inside the core.</p>
-              </div>
-              <div class="card">
-                <div class="metric">32</div>
-                <h3>Register Width</h3>
-                <p>The control plane uses 32-bit AXI4-Lite words and an 8-bit address space.</p>
-              </div>
-            </div>
-            <div class="mode-cloud" aria-label="Supported modes">
-              <span>ECB</span>
-              <span>CBC</span>
-              <span>CTR</span>
-              <span>CFB</span>
-              <span>OFB</span>
-              <span>GCM</span>
-            </div>
-          </section>
-
-          <section id="architecture">
-            <p class="section-label">Microarchitecture</p>
-            <h2>Architecture</h2>
-            <p class="lead">
-              The top-level wrapper contains an AXI4-Lite register interface and an AES core. Software
-              programs key, IV, input data, AAD, mode, direction, and interrupt enable bits through the
-              register map. The register interface issues one-block commands to the core and captures
-              output blocks and GCM tags for software reads.
-            </p>
-            <img class="diagram" src="assets/architecture.svg" alt="Block diagram of the AES-256 IP architecture">
-            <div class="grid-2">
-              <div class="card">
-                <h3>Control Plane</h3>
-                <p>
-                  <code>aes256_axi4_interface</code> decodes AXI4-Lite reads and writes, stores key/IV/data
-                  words, exposes status and IRQ state, and presents command strobes to the core.
-                </p>
-              </div>
-              <div class="card">
-                <h3>Data Plane</h3>
-                <p>
-                  <code>aes256_top_core</code> expands the 256-bit key, routes traffic to the selected
-                  mode engine, and returns a 128-bit result block with valid/last signaling.
-                </p>
-              </div>
-            </div>
-          </section>
-
-          <section id="interface">
-            <p class="section-label">Integration Boundary</p>
-            <h2>Top Interface</h2>
-            <p class="lead">
-              The integration boundary is <code>aes256_wrapper</code>. Clock and reset use
-              <code>i_aes_aclk</code> and active-low asynchronous reset <code>i_aes_aresetn</code>.
-              The host interface is AXI4-Lite with one interrupt output.
-            </p>
-            <div class="table-wrap">
-              <table>
-                <thead>
-                  <tr><th>Group</th><th>Signals</th><th>Description</th></tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>Clock/reset</td>
-                    <td><code>i_aes_aclk</code>, <code>i_aes_aresetn</code></td>
-                    <td>Single synchronous clock domain with active-low reset.</td>
-                  </tr>
-                  <tr>
-                    <td>Write address/data</td>
-                    <td><code>AWADDR/AWVALID/AWREADY</code>, <code>WDATA/WSTRB/WVALID/WREADY</code></td>
-                    <td>AXI4-Lite write command and data channels.</td>
-                  </tr>
-                  <tr>
-                    <td>Write response</td>
-                    <td><code>BRESP/BVALID/BREADY</code></td>
-                    <td>Write completion and response status.</td>
-                  </tr>
-                  <tr>
-                    <td>Read address/data</td>
-                    <td><code>ARADDR/ARVALID/ARREADY</code>, <code>RDATA/RRESP/RVALID/RREADY</code></td>
-                    <td>AXI4-Lite read command and data channels.</td>
-                  </tr>
-                  <tr>
-                    <td>Interrupt</td>
-                    <td><code>o_aes_irq</code></td>
-                    <td>Asserted when enabled output-data or GCM-tag events are pending.</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </section>
-
-          <section id="registers">
-            <p class="section-label">Software Contract</p>
-            <h2>Register Map</h2>
-            <p class="lead">
-              All registers are 32-bit wide and word aligned. Multiword fields are exposed as consecutive
-              32-bit words: key uses eight words, while IV, DIN, DOUT, AAD, and TAG use four words each.
-            </p>
-            <img class="diagram" src="assets/register-map.svg" alt="AXI4-Lite register map overview">
-            <div class="table-wrap">
-              <table>
-                <thead>
-                  <tr><th>Address</th><th>Name</th><th>Access</th><th>Description</th></tr>
-                </thead>
-                <tbody>
-                  <tr><td><code>0x00</code></td><td>CTRL</td><td>RW</td><td>Start, direction, and mode control.</td></tr>
-                  <tr><td><code>0x04</code></td><td>STATUS</td><td>RO</td><td>Busy, done, key-ready, and error status.</td></tr>
-                  <tr><td><code>0x08</code></td><td>IRQ_EN</td><td>RW</td><td>Interrupt enable bits.</td></tr>
-                  <tr><td><code>0x0C</code></td><td>IRQ_STAT</td><td>RW1C</td><td>Interrupt pending bits, write one to clear.</td></tr>
-                  <tr><td><code>0x10-0x2C</code></td><td>KEY0..KEY7</td><td>WO/RW</td><td>256-bit AES key.</td></tr>
-                  <tr><td><code>0x30-0x3C</code></td><td>IV0..IV3</td><td>WO/RW</td><td>128-bit IV, nonce, or counter seed.</td></tr>
-                  <tr><td><code>0x40-0x4C</code></td><td>DIN0..DIN3</td><td>WO/RW</td><td>128-bit plaintext or ciphertext input block.</td></tr>
-                  <tr><td><code>0x50-0x5C</code></td><td>DOUT0..DOUT3</td><td>RO</td><td>128-bit output block.</td></tr>
-                  <tr><td><code>0x60-0x6C</code></td><td>AAD0..AAD3</td><td>WO/RW</td><td>GCM additional authenticated data block.</td></tr>
-                  <tr><td><code>0x70-0x7C</code></td><td>TAG0..TAG3</td><td>RO</td><td>128-bit GCM authentication tag.</td></tr>
-                  <tr><td><code>0x80</code></td><td>DIN_CTRL</td><td>RW</td><td>Data-last and AAD-last block markers.</td></tr>
-                  <tr><td><code>0x84</code></td><td>VERSION</td><td>RO</td><td>IP version, currently <code>0x0001_0000</code>.</td></tr>
-                </tbody>
-              </table>
-            </div>
-
-            <h3>CTRL Register</h3>
-            <div class="table-wrap">
-              <table>
-                <thead>
-                  <tr><th>Bits</th><th>Name</th><th>Description</th></tr>
-                </thead>
-                <tbody>
-                  <tr><td><code>[0]</code></td><td>START</td><td>Write one to issue a block command after key, IV, and data are programmed.</td></tr>
-                  <tr><td><code>[1]</code></td><td>ENC_DEC</td><td><code>1</code> selects encryption, <code>0</code> selects decryption for supported modes.</td></tr>
-                  <tr><td><code>[4:2]</code></td><td>MODE</td><td>Mode encoding: ECB=0, CBC=1, CTR=2, CFB=3, OFB=4, GCM=5.</td></tr>
-                  <tr><td><code>[31:5]</code></td><td>RESERVED</td><td>Write zero and ignore on read.</td></tr>
-                </tbody>
-              </table>
-            </div>
-
-            <h3>STATUS and IRQ Bits</h3>
-            <div class="table-wrap">
-              <table>
-                <thead>
-                  <tr><th>Register</th><th>Bit</th><th>Name</th><th>Description</th></tr>
-                </thead>
-                <tbody>
-                  <tr><td>STATUS</td><td><code>0</code></td><td>BUSY</td><td>Core is processing or key expansion is not ready.</td></tr>
-                  <tr><td>STATUS</td><td><code>1</code></td><td>DONE</td><td>Output block or tag event has completed.</td></tr>
-                  <tr><td>STATUS</td><td><code>2</code></td><td>KEY_READY</td><td>Expanded key is available for block processing.</td></tr>
-                  <tr><td>STATUS</td><td><code>3</code></td><td>ERR</td><td>Reserved error indicator.</td></tr>
-                  <tr><td>IRQ_EN/IRQ_STAT</td><td><code>0</code></td><td>DOUT_VALID</td><td>Output data valid event.</td></tr>
-                  <tr><td>IRQ_EN/IRQ_STAT</td><td><code>1</code></td><td>TAG_VALID</td><td>GCM tag valid event.</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </section>
-
-          <section id="programming">
-            <p class="section-label">Firmware Flow</p>
-            <h2>Programming Model</h2>
-            <p class="lead">
-              Software operates the IP as a register-driven block accelerator. Program key material first,
-              wait for key expansion, then issue one 128-bit block command at a time.
-            </p>
-            <pre class="command-panel"><code>1. Write CTRL with START=0, ENC_DEC, and MODE.
-2. Write KEY0..KEY7.
-3. Poll STATUS.KEY_READY until it is set.
-4. For IV-based modes, write IV0..IV3.
-5. For GCM, optionally write AAD0..AAD3 and set DIN_CTRL.aad_last.
-6. Write DIN0..DIN3 and set DIN_CTRL.din_last as needed.
-7. Write CTRL.START=1 with the selected ENC_DEC and MODE.
-8. Poll STATUS.DONE or wait for o_aes_irq.
-9. Read DOUT0..DOUT3. For GCM, read TAG0..TAG3 when tag IRQ is pending.
-10. Clear IRQ_STAT by writing one to pending bits.</code></pre>
-            <div class="callout">
-              Keep mode, direction, key, and IV stable while the core is busy. For streaming use cases,
-              issue blocks in order and only mark <code>din_last</code> on the final block of the message.
-            </div>
-          </section>
-
-          <section id="modes">
-            <p class="section-label">Crypto Modes</p>
-            <h2>Modes</h2>
-            <div class="table-wrap">
-              <table>
-                <thead>
-                  <tr><th>Encoding</th><th>Mode</th><th>IV Required</th><th>Direction Support</th><th>Notes</th></tr>
-                </thead>
-                <tbody>
-                  <tr><td><code>0b000</code></td><td>ECB</td><td>No</td><td>Encrypt and decrypt</td><td>Independent block transform.</td></tr>
-                  <tr><td><code>0b001</code></td><td>CBC</td><td>Yes</td><td>Encrypt and decrypt</td><td>Chained block mode using the previous ciphertext block.</td></tr>
-                  <tr><td><code>0b010</code></td><td>CTR</td><td>Yes</td><td>Symmetric stream transform</td><td>Counter-mode keystream generation.</td></tr>
-                  <tr><td><code>0b011</code></td><td>CFB</td><td>Yes</td><td>Symmetric stream transform</td><td>Feedback mode using AES encryption datapath.</td></tr>
-                  <tr><td><code>0b100</code></td><td>OFB</td><td>Yes</td><td>Symmetric stream transform</td><td>Output feedback keystream generation.</td></tr>
-                  <tr><td><code>0b101</code></td><td>GCM</td><td>Yes</td><td>Authenticated encryption flow</td><td>CTR-style data path with GHASH tag generation.</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </section>
-
-          <section id="timing">
-            <p class="section-label">Operational Timing</p>
-            <h2>Timing</h2>
-            <p class="lead">
-              The core is an iterative implementation optimized for compact RTL and deterministic control.
-              Key expansion must complete before input blocks are submitted.
-            </p>
-            <div class="grid-3">
-              <div class="card">
-                <h3>Key Expansion</h3>
-                <p>Generates 15 round keys for AES-256. Software should poll <code>STATUS.KEY_READY</code>.</p>
-              </div>
-              <div class="card">
-                <h3>Block Latency</h3>
-                <p>One 128-bit input block is processed through a 14-round AES datapath.</p>
-              </div>
-              <div class="card">
-                <h3>Interrupt Latency</h3>
-                <p><code>IRQ_STAT.DOUT_VALID</code> or <code>IRQ_STAT.TAG_VALID</code> is set when the corresponding result is captured.</p>
-              </div>
-            </div>
-          </section>
-
-          <section id="verification">
-            <p class="section-label">Verification Collateral</p>
-            <h2>Verification</h2>
-            <p class="lead">
-              The verification environment is organized as a UVM AXI4-Lite testbench with agent, driver,
-              monitor, scoreboard, reusable sequences, and directed tests.
-            </p>
-            <img class="diagram" src="assets/verification-flow.svg" alt="UVM verification flow diagram">
-            <div class="table-wrap">
-              <table>
-                <thead>
-                  <tr><th>Test</th><th>Purpose</th></tr>
-                </thead>
-                <tbody>
-                  <tr><td><code>aes256_reg_test</code></td><td>Reset values, version read, register access, and unmapped access behavior.</td></tr>
-                  <tr><td><code>aes256_ecb_vector_test</code></td><td>AES-256 ECB known-answer encryption/decryption vector.</td></tr>
-                  <tr><td><code>aes256_cbc_roundtrip_test</code></td><td>CBC encrypt-to-decrypt round trip with key and IV reload.</td></tr>
-                  <tr><td><code>aes256_modes_roundtrip_test</code></td><td>Round-trip coverage for ECB, CBC, CTR, CFB, and OFB.</td></tr>
-                  <tr><td><code>aes256_gcm_smoke_test</code></td><td>GCM data output, tag output, and tag interrupt smoke coverage.</td></tr>
-                  <tr><td><code>aes256_irq_test</code></td><td>Data-valid interrupt enable, pending, and write-one-to-clear behavior.</td></tr>
-                  <tr><td><code>aes256_b2b_test</code></td><td>Back-to-back register-driven block commands.</td></tr>
-                  <tr><td><code>aes256_axi_error_test</code></td><td>AXI response behavior for invalid or edge-case accesses.</td></tr>
-                  <tr><td><code>aes256_all_test</code></td><td>Regression wrapper for the directed suite.</td></tr>
-                </tbody>
-              </table>
-            </div>
-            <pre class="command-panel"><code>make lint
-make compile
-make run UVM_TEST=aes256_all_test
-make run UVM_TEST=aes256_ecb_vector_test
-make coverage UVM_TEST=aes256_all_test</code></pre>
-            <p>
-              Current local regression status: <span class="status-ok">UVM_ERROR = 0, UVM_FATAL = 0</span>
-              after running the ModelSim UVM flow.
-            </p>
-          </section>
-
-          <section id="integration">
-            <p class="section-label">SoC Bring-Up</p>
-            <h2>Integration Notes</h2>
-            <div class="grid-2">
-              <div class="card">
-                <h3>Reset and Clock</h3>
-                <p>
-                  Drive <code>i_aes_aresetn</code> low during system reset. All AXI and core state must be
-                  considered invalid until reset is released and software initializes the register set.
-                </p>
-              </div>
-              <div class="card">
-                <h3>AXI4-Lite Access</h3>
-                <p>
-                  Use 32-bit aligned writes. Program all words of a multiword field before asserting
-                  <code>CTRL.START</code>.
-                </p>
-              </div>
-              <div class="card">
-                <h3>Interrupt Handling</h3>
-                <p>
-                  Enable desired event bits in <code>IRQ_EN</code>. On interrupt, read <code>IRQ_STAT</code>,
-                  service DOUT/TAG registers, then clear pending bits with write-one-to-clear.
-                </p>
-              </div>
-              <div class="card">
-                <h3>Security Hygiene</h3>
-                <p>
-                  The current RTL is a functional cryptographic accelerator. Production deployments should
-                  add side-channel analysis, key zeroization policy, fault response, and full NIST vector coverage.
-                </p>
-              </div>
-            </div>
-            <div class="callout warn">
-              GCM is covered by smoke-level UVM checks in this repository. Before using GCM in a production
-              product, extend the regression with official authenticated-encryption test vectors and negative
-              tag validation scenarios.
-            </div>
-          </section>
-
-          <section id="deliverables">
-            <p class="section-label">Package Contents</p>
-            <h2>Deliverables</h2>
-            <div class="table-wrap">
-              <table>
-                <thead>
-                  <tr><th>Path</th><th>Description</th></tr>
-                </thead>
-                <tbody>
-                  <tr><td><code>rtl/</code></td><td>Synthesizable AES-256 RTL, mode engines, AXI wrapper, and package.</td></tr>
-                  <tr><td><code>inc/</code></td><td>Register map, mode encoding, field definitions, and IP version macros.</td></tr>
-                  <tr><td><code>uvm/</code></td><td>UVM verification environment, sequences, tests, scoreboard, and testbench top.</td></tr>
-                  <tr><td><code>Makefile</code></td><td>Verilator lint and ModelSim compile/run/coverage flow.</td></tr>
-                  <tr><td><code>docs/</code></td><td>GitHub Pages documentation site.</td></tr>
-                </tbody>
-              </table>
-            </div>
-            <h3>GitHub Pages Setup</h3>
-            <pre class="command-panel"><code>Repository Settings
-Pages
-Build and deployment: Deploy from a branch
-Branch: gh-pages
-Folder: /</code></pre>
-          </section>
-
-          <footer class="footer">
-            <p>
-              AES-256 Cryptographic IP Core documentation. Generated from the repository RTL,
-              register definitions, UVM environment, and build flow.
-            </p>
-          </footer>
         </div>
-      </main>
-    </div>
-  </body>
+      </header>
+
+      <div class="content">
+        <section id="overview">
+          <p class="section-kicker">Product Brief</p>
+          <h2>Overview</h2>
+          <p class="lead">
+            The AES-256 Cryptographic IP Core is a register-controlled hardware accelerator
+            for SoC, FPGA, and ASIC designs. The IP exposes a compact AXI4-Lite control
+            plane and internally routes 128-bit blocks through AES-256 key expansion,
+            encryption/decryption datapaths, mode engines, status reporting, and interrupt
+            generation.
+          </p>
+          <div class="grid-3">
+            <div class="card"><div class="metric">14</div><div class="metric-label">Rounds</div><p>AES-256 algorithm round count with expanded round keys.</p></div>
+            <div class="card"><div class="metric">6</div><div class="metric-label">Modes</div><p>ECB, CBC, CTR, CFB, OFB, and GCM mode selection.</p></div>
+            <div class="card"><div class="metric">32-bit</div><div class="metric-label">AXI</div><p>32-bit AXI4-Lite register data path with 8-bit address space.</p></div>
+          </div>
+        </section>
+
+        <section id="architecture">
+          <p class="section-kicker">Microarchitecture</p>
+          <h2>Architecture</h2>
+          <p class="lead">
+            The wrapper separates software-visible AXI4-Lite register handling from the
+            AES core data plane. Software programs key, IV, AAD, input blocks, mode,
+            direction, and interrupt enables; the core performs key expansion and selected
+            mode processing.
+          </p>
+          <div class="svg-frame" aria-label="Architecture block diagram">
+            <svg viewBox="0 0 980 420" role="img" aria-label="AES-256 IP architecture diagram">
+              <defs>
+                <style>
+                  .b{fill:#fff;stroke:#2563EB;stroke-width:2}.g{fill:#ECFDF5;stroke:#16A34A;stroke-width:2}.o{fill:#FFF7ED;stroke:#F59E0B;stroke-width:2}.r{fill:#FEF2F2;stroke:#DC2626;stroke-width:2}.t{font:700 16px system-ui;fill:#111827}.s{font:500 12px system-ui;fill:#475569}.l{stroke:#64748B;stroke-width:2.5;marker-end:url(#a)}
+                </style>
+                <marker id="a" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M1 1 L9 5 L1 9 Z" fill="#64748B"/></marker>
+              </defs>
+              <rect x="24" y="116" width="160" height="140" rx="10" class="b"/>
+              <text x="70" y="158" class="t">SoC Host</text><text x="58" y="188" class="s">AXI4-Lite master</text><text x="58" y="212" class="s">IRQ consumer</text>
+              <rect x="260" y="72" width="210" height="230" rx="10" class="g"/>
+              <text x="306" y="116" class="t">Register File</text><text x="302" y="146" class="s">CTRL / STATUS</text><text x="302" y="170" class="s">KEY / IV / DIN</text><text x="302" y="194" class="s">DOUT / AAD / TAG</text><text x="302" y="218" class="s">IRQ_EN / IRQ_STAT</text>
+              <rect x="555" y="46" width="360" height="300" rx="14" class="o"/>
+              <text x="676" y="88" class="t">aes256_top_core</text>
+              <rect x="590" y="118" width="130" height="70" rx="8" class="b"/><text x="610" y="150" class="t">Key Exp.</text><text x="610" y="172" class="s">15 rkeys</text>
+              <rect x="756" y="118" width="130" height="70" rx="8" class="b"/><text x="782" y="150" class="t">Mode Mux</text><text x="775" y="172" class="s">0..5 select</text>
+              <rect x="590" y="230" width="130" height="70" rx="8" class="r"/><text x="616" y="262" class="t">ENC DP</text><text x="620" y="284" class="s">14 rounds</text>
+              <rect x="756" y="230" width="130" height="70" rx="8" class="r"/><text x="782" y="262" class="t">DEC DP</text><text x="786" y="284" class="s">14 rounds</text>
+              <line x1="184" y1="186" x2="260" y2="186" class="l"/><line x1="470" y1="186" x2="555" y2="186" class="l"/><line x1="720" y1="153" x2="756" y2="153" class="l"/><line x1="821" y1="188" x2="821" y2="230" class="l"/><line x1="655" y1="188" x2="655" y2="230" class="l"/>
+              <text x="206" y="174" class="s">AXI4-Lite</text><text x="492" y="174" class="s">core strobes</text><text x="610" y="382" class="s">DOUT, TAG, STATUS, IRQ return to register file</text>
+            </svg>
+          </div>
+          <div class="grid-2">
+            <div class="card"><h3>Control Plane</h3><p><code>aes256_axi4_interface</code> decodes AXI4-Lite transfers, stores software-programmed registers, issues one-block start commands, captures output, and manages interrupt state.</p></div>
+            <div class="card"><h3>Data Plane</h3><p><code>aes256_top_core</code> expands the 256-bit key, selects ECB/CBC/CTR/CFB/OFB/GCM engines, runs the 14-round datapath, and returns valid output blocks or GCM tags.</p></div>
+          </div>
+        </section>
+
+        <section id="top-interface">
+          <p class="section-kicker">Integration Boundary</p>
+          <h2>Top Interface</h2>
+          <p class="lead">The top integration module is <code>aes256_wrapper</code>. All AXI signals are synchronous to <code>i_aes_aclk</code>; reset is active-low on <code>i_aes_aresetn</code>.</p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Group</th><th>Signal</th><th>Direction</th><th>Width</th><th>Description</th></tr></thead>
+              <tbody>
+                <tr><td>Clock/reset</td><td><code>i_aes_aclk</code></td><td class="dir-in">Input</td><td>1</td><td>AXI and core clock.</td></tr>
+                <tr><td>Clock/reset</td><td><code>i_aes_aresetn</code></td><td class="dir-in">Input</td><td>1</td><td>Asynchronous active-low reset.</td></tr>
+                <tr><td>Write address</td><td><code>i_aes_awaddr</code></td><td class="dir-in">Input</td><td>8</td><td>AXI4-Lite write address.</td></tr>
+                <tr><td>Write address</td><td><code>i_aes_awprot</code></td><td class="dir-in">Input</td><td>3</td><td>AXI protection attributes.</td></tr>
+                <tr><td>Write address</td><td><code>i_aes_awvalid</code></td><td class="dir-in">Input</td><td>1</td><td>Write address valid.</td></tr>
+                <tr><td>Write address</td><td><code>o_aes_awready</code></td><td class="dir-out">Output</td><td>1</td><td>Write address ready.</td></tr>
+                <tr><td>Write data</td><td><code>i_aes_wdata</code></td><td class="dir-in">Input</td><td>32</td><td>AXI write data.</td></tr>
+                <tr><td>Write data</td><td><code>i_aes_wstrb</code></td><td class="dir-in">Input</td><td>4</td><td>Byte write strobes.</td></tr>
+                <tr><td>Write data</td><td><code>i_aes_wvalid</code></td><td class="dir-in">Input</td><td>1</td><td>Write data valid.</td></tr>
+                <tr><td>Write data</td><td><code>o_aes_wready</code></td><td class="dir-out">Output</td><td>1</td><td>Write data ready.</td></tr>
+                <tr><td>Write response</td><td><code>o_aes_bresp</code></td><td class="dir-out">Output</td><td>2</td><td>AXI write response.</td></tr>
+                <tr><td>Write response</td><td><code>o_aes_bvalid</code></td><td class="dir-out">Output</td><td>1</td><td>Write response valid.</td></tr>
+                <tr><td>Write response</td><td><code>i_aes_bready</code></td><td class="dir-in">Input</td><td>1</td><td>Write response ready.</td></tr>
+                <tr><td>Read address</td><td><code>i_aes_araddr</code></td><td class="dir-in">Input</td><td>8</td><td>AXI4-Lite read address.</td></tr>
+                <tr><td>Read address</td><td><code>i_aes_arprot</code></td><td class="dir-in">Input</td><td>3</td><td>AXI protection attributes.</td></tr>
+                <tr><td>Read address</td><td><code>i_aes_arvalid</code></td><td class="dir-in">Input</td><td>1</td><td>Read address valid.</td></tr>
+                <tr><td>Read address</td><td><code>o_aes_arready</code></td><td class="dir-out">Output</td><td>1</td><td>Read address ready.</td></tr>
+                <tr><td>Read data</td><td><code>o_aes_rdata</code></td><td class="dir-out">Output</td><td>32</td><td>AXI read data.</td></tr>
+                <tr><td>Read data</td><td><code>o_aes_rresp</code></td><td class="dir-out">Output</td><td>2</td><td>AXI read response.</td></tr>
+                <tr><td>Read data</td><td><code>o_aes_rvalid</code></td><td class="dir-out">Output</td><td>1</td><td>Read data valid.</td></tr>
+                <tr><td>Read data</td><td><code>i_aes_rready</code></td><td class="dir-in">Input</td><td>1</td><td>Read data ready.</td></tr>
+                <tr><td>Interrupt</td><td><code>o_aes_irq</code></td><td class="dir-out">Output</td><td>1</td><td>Asserted when enabled DOUT or TAG interrupt status is pending.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="register-map">
+          <p class="section-kicker">Software Register Contract</p>
+          <h2>Register Map</h2>
+          <p class="lead">All registers are 32-bit wide and word aligned. Multiword data fields are exposed as consecutive 32-bit words.</p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Offset</th><th>Name</th><th>Access</th><th>Reset</th><th>Description</th></tr></thead>
+              <tbody>
+                <tr><td><code>0x00</code></td><td>CTRL</td><td><span class="badge blue">RW</span></td><td><code>0x0000_0000</code></td><td>Start, encrypt/decrypt, and mode select.</td></tr>
+                <tr><td><code>0x04</code></td><td>STATUS</td><td><span class="badge gray">RO</span></td><td><code>0x0000_0000</code></td><td>Busy, done, key-ready, and error flags.</td></tr>
+                <tr><td><code>0x08</code></td><td>IRQ_EN</td><td><span class="badge blue">RW</span></td><td><code>0x0000_0000</code></td><td>Interrupt enable bits.</td></tr>
+                <tr><td><code>0x0C</code></td><td>IRQ_STAT</td><td><span class="badge purple">RW1C</span></td><td><code>0x0000_0000</code></td><td>Interrupt pending bits, write one to clear.</td></tr>
+                <tr><td><code>0x10-0x2C</code></td><td>KEY0..KEY7</td><td><span class="badge amber">WO</span></td><td><code>0x0000_0000</code></td><td>256-bit AES key.</td></tr>
+                <tr><td><code>0x30-0x3C</code></td><td>IV0..IV3</td><td><span class="badge amber">WO</span></td><td><code>0x0000_0000</code></td><td>128-bit IV, nonce, or counter seed.</td></tr>
+                <tr><td><code>0x40-0x4C</code></td><td>DIN0..DIN3</td><td><span class="badge amber">WO</span></td><td><code>0x0000_0000</code></td><td>128-bit plaintext or ciphertext input block.</td></tr>
+                <tr><td><code>0x50-0x5C</code></td><td>DOUT0..DOUT3</td><td><span class="badge gray">RO</span></td><td><code>0x0000_0000</code></td><td>128-bit output block.</td></tr>
+                <tr><td><code>0x60-0x6C</code></td><td>AAD0..AAD3</td><td><span class="badge amber">WO</span></td><td><code>0x0000_0000</code></td><td>GCM additional authenticated data.</td></tr>
+                <tr><td><code>0x70-0x7C</code></td><td>TAG0..TAG3</td><td><span class="badge gray">RO</span></td><td><code>0x0000_0000</code></td><td>GCM authentication tag output.</td></tr>
+                <tr><td><code>0x80</code></td><td>DIN_CTRL</td><td><span class="badge blue">RW</span></td><td><code>0x0000_0000</code></td><td>Input-last and AAD-last markers.</td></tr>
+                <tr><td><code>0x84</code></td><td>VERSION</td><td><span class="badge gray">RO</span></td><td><code>0x0001_0000</code></td><td>IP version register.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>CTRL Bit Fields</h3>
+          <div class="bitfield">
+            <div class="bits"><span>31:5</span><span>4:2</span><span>1</span><span>0</span></div>
+            <div class="fields"><div class="field rsvd" style="flex:27">RESERVED</div><div class="field ctrl" style="flex:3">MODE</div><div class="field ctrl" style="flex:1">ENC_DEC</div><div class="field ctrl" style="flex:1">START</div></div>
+          </div>
+          <div class="table-wrap">
+            <table><thead><tr><th>Bits</th><th>Name</th><th>Access</th><th>Description</th></tr></thead><tbody>
+              <tr><td><code>[0]</code></td><td>START</td><td><span class="badge blue">RW</span></td><td>Write one to issue a block command.</td></tr>
+              <tr><td><code>[1]</code></td><td>ENC_DEC</td><td><span class="badge blue">RW</span></td><td><code>1</code> encrypt, <code>0</code> decrypt for supported modes.</td></tr>
+              <tr><td><code>[4:2]</code></td><td>MODE</td><td><span class="badge blue">RW</span></td><td>ECB=0, CBC=1, CTR=2, CFB=3, OFB=4, GCM=5.</td></tr>
+            </tbody></table>
+          </div>
+
+          <h3>STATUS Bit Fields</h3>
+          <div class="bitfield">
+            <div class="bits"><span>31:4</span><span>3</span><span>2</span><span>1</span><span>0</span></div>
+            <div class="fields"><div class="field rsvd" style="flex:28">RESERVED</div><div class="field err" style="flex:1">ERR</div><div class="field ok" style="flex:1">KEY_READY</div><div class="field ok" style="flex:1">DONE</div><div class="field warnf" style="flex:1">BUSY</div></div>
+          </div>
+          <div class="table-wrap">
+            <table><thead><tr><th>Bits</th><th>Name</th><th>Access</th><th>Description</th></tr></thead><tbody>
+              <tr><td><code>[0]</code></td><td>BUSY</td><td><span class="badge gray">RO</span></td><td>Core is processing or key expansion is not ready.</td></tr>
+              <tr><td><code>[1]</code></td><td>DONE</td><td><span class="badge gray">RO</span></td><td>Output block or tag event completed.</td></tr>
+              <tr><td><code>[2]</code></td><td>KEY_READY</td><td><span class="badge gray">RO</span></td><td>Expanded key is available for block processing.</td></tr>
+              <tr><td><code>[3]</code></td><td>ERR</td><td><span class="badge gray">RO</span></td><td>Reserved error indicator.</td></tr>
+            </tbody></table>
+          </div>
+
+          <h3>IRQ_EN and IRQ_STAT Bit Fields</h3>
+          <div class="bitfield">
+            <div class="bits"><span>31:2</span><span>1</span><span>0</span></div>
+            <div class="fields"><div class="field rsvd" style="flex:30">RESERVED</div><div class="field purple" style="flex:1">TAG_VALID</div><div class="field purple" style="flex:1">DOUT_VALID</div></div>
+          </div>
+          <div class="table-wrap">
+            <table><thead><tr><th>Register</th><th>Bits</th><th>Access</th><th>Description</th></tr></thead><tbody>
+              <tr><td>IRQ_EN</td><td><code>[0]</code></td><td><span class="badge blue">RW</span></td><td>Enable output-data-valid interrupt.</td></tr>
+              <tr><td>IRQ_EN</td><td><code>[1]</code></td><td><span class="badge blue">RW</span></td><td>Enable GCM-tag-valid interrupt.</td></tr>
+              <tr><td>IRQ_STAT</td><td><code>[0]</code></td><td><span class="badge purple">RW1C</span></td><td>Output-data-valid pending bit.</td></tr>
+              <tr><td>IRQ_STAT</td><td><code>[1]</code></td><td><span class="badge purple">RW1C</span></td><td>GCM-tag-valid pending bit.</td></tr>
+            </tbody></table>
+          </div>
+        </section>
+
+        <section id="programming-model">
+          <p class="section-kicker">Quick Start</p>
+          <h2>Programming Model</h2>
+          <p class="lead">Firmware operates the IP as a one-block-at-a-time register accelerator. Load key material first, wait for key expansion, then issue block commands.</p>
+          <ol class="flow">
+            <li><div>Write <code>CTRL</code> with <code>START=0</code>, selected <code>ENC_DEC</code>, and selected <code>MODE</code>.</div></li>
+            <li><div>Write <code>KEY0..KEY7</code> with the 256-bit AES key.</div></li>
+            <li><div>Poll <code>STATUS.KEY_READY</code> until the expanded key is available.</div></li>
+            <li><div>For IV-based modes, write <code>IV0..IV3</code>.</div></li>
+            <li><div>Write <code>DIN0..DIN3</code> and configure <code>DIN_CTRL.din_last</code>.</div></li>
+            <li><div>Write <code>CTRL.START=1</code> to issue the block command.</div></li>
+            <li><div>Poll <code>STATUS.DONE</code> or wait for <code>o_aes_irq</code>.</div></li>
+            <li><div>Read <code>DOUT0..DOUT3</code>; for GCM, also read <code>TAG0..TAG3</code> when tag status is pending.</div></li>
+            <li><div>Clear pending interrupt status by writing one to <code>IRQ_STAT</code> bits.</div></li>
+          </ol>
+          <div class="pre-wrap reg-code">
+            <pre><code><span>wr32(AES_CTRL, MODE_CBC | AES_ENCRYPT);</span><span>for (int i = 0; i &lt; 8; i++) wr32(AES_KEY0 + 4*i, key[i]);</span><span>while ((rd32(AES_STATUS) &amp; STATUS_KEY_READY) == 0) { }</span><span>for (int i = 0; i &lt; 4; i++) wr32(AES_IV0 + 4*i, iv[i]);</span><span>wr32(AES_DIN_CTRL, DIN_LAST);</span><span>for (int i = 0; i &lt; 4; i++) wr32(AES_DIN0 + 4*i, plaintext[i]);</span><span>wr32(AES_CTRL, MODE_CBC | AES_ENCRYPT | CTRL_START);</span><span>while ((rd32(AES_STATUS) &amp; STATUS_DONE) == 0) { }</span><span>for (int i = 0; i &lt; 4; i++) ciphertext[i] = rd32(AES_DOUT0 + 4*i);</span><span>wr32(AES_IRQ_STAT, IRQ_DOUT_VALID | IRQ_TAG_VALID);</span></code></pre>
+          </div>
+          <div class="callout warn"><strong>WARN</strong>Do not modify mode, direction, key, IV, or data registers while the core is busy. Program every word of a multiword register group before asserting <code>CTRL.START</code>.</div>
+          <div class="callout"><strong>INFO</strong>For ECB and CBC, <code>ENC_DEC</code> selects encryption or decryption. CTR, CFB, OFB, and GCM are stream-style transforms built around the encryption datapath.</div>
+        </section>
+
+        <section id="modes">
+          <p class="section-kicker">Operating Modes</p>
+          <h2>Modes</h2>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Encoding</th><th>Mode</th><th>IV Required</th><th>Direction</th><th>Description</th></tr></thead>
+              <tbody>
+                <tr><td><code>0b000</code></td><td><span class="mode-badge m-ecb">ECB</span></td><td>No</td><td>Encrypt/decrypt</td><td>Independent AES block transform.</td></tr>
+                <tr><td><code>0b001</code></td><td><span class="mode-badge m-cbc">CBC</span></td><td>Yes</td><td>Encrypt/decrypt</td><td>Cipher Block Chaining with previous ciphertext feedback.</td></tr>
+                <tr><td><code>0b010</code></td><td><span class="mode-badge m-ctr">CTR</span></td><td>Yes</td><td>Symmetric</td><td>Counter-mode keystream XOR transform.</td></tr>
+                <tr><td><code>0b011</code></td><td><span class="mode-badge m-cfb">CFB</span></td><td>Yes</td><td>Symmetric</td><td>Cipher feedback stream-style transform.</td></tr>
+                <tr><td><code>0b100</code></td><td><span class="mode-badge m-ofb">OFB</span></td><td>Yes</td><td>Symmetric</td><td>Output feedback keystream transform.</td></tr>
+                <tr><td><code>0b101</code></td><td><span class="mode-badge m-gcm">GCM</span></td><td>Yes</td><td>Authenticated flow</td><td>CTR-style data transform with GHASH tag generation.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout warn"><strong>WARN</strong>GCM is included in RTL and covered by smoke-level UVM tests. Production use should add official authenticated-encryption vectors and negative tag-validation scenarios.</div>
+        </section>
+
+        <section id="timing">
+          <p class="section-kicker">Timing and Latency</p>
+          <h2>Timing</h2>
+          <div class="grid-3">
+            <div class="card"><h3>Key Expansion</h3><p>Software must wait for <code>STATUS.KEY_READY</code> before issuing data blocks.</p></div>
+            <div class="card"><h3>Block Processing</h3><p>Each 128-bit block uses the AES-256 14-round datapath.</p></div>
+            <div class="card"><h3>Interrupt</h3><p><code>IRQ_STAT.DOUT_VALID</code> or <code>IRQ_STAT.TAG_VALID</code> is set when output is captured.</p></div>
+          </div>
+          <div class="svg-frame" aria-label="Timing diagram">
+            <svg viewBox="0 0 980 310" role="img" aria-label="AES command timing diagram">
+              <defs><style>.wave{fill:none;stroke:#2563EB;stroke-width:3}.clk{fill:none;stroke:#111827;stroke-width:2}.txt{font:700 13px IBM Plex Mono,Consolas,monospace;fill:#111827}.mut{font:500 12px system-ui;fill:#64748B}.anno{fill:#FEF3C7;stroke:#F59E0B}</style></defs>
+              <text x="24" y="35" class="txt">clk</text>
+              <path class="clk" d="M90 30 h20 v-16 h20 v16 h20 v-16 h20 v16 h20 v-16 h20 v16 h20 v-16 h20 v16 h20 v-16 h20 v16 h20 v-16 h20 v16 h20 v-16 h20 v16 h20 v-16 h20 v16 h20 v-16 h20 v16 h20 v-16 h20 v16 h20 v-16 h20 v16 h20 v-16 h20 v16 h20"/>
+              <text x="24" y="92" class="txt">key_valid</text><path class="wave" d="M120 92 h70 v-28 h70 v28 h590"/>
+              <text x="24" y="142" class="txt">key_ready</text><path class="wave" d="M120 142 h175 v28 h150 v-28 h405"/>
+              <text x="24" y="192" class="txt">din_valid</text><path class="wave" d="M120 192 h360 v-28 h70 v28 h300"/>
+              <text x="24" y="242" class="txt">dout_valid</text><path class="wave" d="M120 242 h565 v-28 h70 v28 h95"/>
+              <rect x="292" y="106" width="150" height="78" rx="8" class="anno"/><text x="312" y="139" class="mut">Key expansion</text><text x="312" y="160" class="mut">poll KEY_READY</text>
+              <rect x="552" y="166" width="130" height="72" rx="8" class="anno"/><text x="572" y="197" class="mut">14-round</text><text x="572" y="218" class="mut">block datapath</text>
+              <text x="690" y="268" class="mut">Read DOUT, clear IRQ_STAT</text>
+            </svg>
+          </div>
+        </section>
+
+        <section id="verification">
+          <p class="section-kicker">Verification</p>
+          <h2>Verification</h2>
+          <p class="lead">The UVM environment includes agent, sequencer, driver, monitor, scoreboard, reusable sequences, and directed tests for register behavior, AES vectors, modes, IRQs, and AXI edge cases.</p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Test Name</th><th>Coverage Goal</th><th>Status</th></tr></thead>
+              <tbody>
+                <tr><td><code>aes256_reg_test</code></td><td>Reset values, VERSION, register R/W, unmapped access behavior.</td><td><span class="badge green">PASS</span></td></tr>
+                <tr><td><code>aes256_ecb_vector_test</code></td><td>NIST-style AES-256 ECB known-answer encrypt/decrypt vector.</td><td><span class="badge green">PASS</span></td></tr>
+                <tr><td><code>aes256_cbc_roundtrip_test</code></td><td>CBC encrypt-to-decrypt round trip with key and IV reload.</td><td><span class="badge green">PASS</span></td></tr>
+                <tr><td><code>aes256_modes_roundtrip_test</code></td><td>Round-trip coverage for ECB, CBC, CTR, CFB, and OFB.</td><td><span class="badge green">PASS</span></td></tr>
+                <tr><td><code>aes256_gcm_smoke_test</code></td><td>GCM output, tag output, and tag IRQ smoke coverage.</td><td><span class="badge amber">SMOKE</span></td></tr>
+                <tr><td><code>aes256_irq_test</code></td><td>DOUT interrupt enable, pending state, and write-one-to-clear.</td><td><span class="badge green">PASS</span></td></tr>
+                <tr><td><code>aes256_b2b_test</code></td><td>Back-to-back register-driven block commands.</td><td><span class="badge green">PASS</span></td></tr>
+                <tr><td><code>aes256_axi_error_test</code></td><td>AXI invalid or edge-case access behavior.</td><td><span class="badge green">PASS</span></td></tr>
+                <tr><td><code>aes256_all_test</code></td><td>Directed regression wrapper for the complete UVM suite.</td><td><span class="badge green">PASS</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="pre-wrap terminal">
+            <pre><code><span class="prompt">$</span> <span class="cmd">make lint</span>
+<span class="prompt">$</span> <span class="cmd">make compile</span>
+<span class="prompt">$</span> <span class="cmd">make run</span> <span class="flag">UVM_TEST=aes256_all_test</span>
+<span class="prompt">$</span> <span class="cmd">make run</span> <span class="flag">UVM_TEST=aes256_ecb_vector_test</span>
+<span class="prompt">$</span> <span class="cmd">make coverage</span> <span class="flag">UVM_TEST=aes256_all_test</span></code></pre>
+          </div>
+        </section>
+
+        <section id="integration-notes">
+          <p class="section-kicker">SoC Integration</p>
+          <h2>Integration Notes</h2>
+          <div class="grid-2">
+            <div class="card"><h3>Reset / Clock</h3><p>Use <code>i_aes_aclk</code> as the single AXI/core clock. Hold <code>i_aes_aresetn</code> low during reset and reinitialize software-visible registers after release.</p></div>
+            <div class="card"><h3>AXI Access</h3><p>Use 32-bit aligned AXI4-Lite accesses. Complete all words of key, IV, DIN, AAD, and control fields before asserting <code>CTRL.START</code>.</p></div>
+            <div class="card"><h3>IRQ Handling</h3><p>Enable desired events through <code>IRQ_EN</code>. Service <code>DOUT</code> and <code>TAG</code> registers, then clear <code>IRQ_STAT</code> with write-one-to-clear.</p></div>
+            <div class="card"><h3>Security</h3><p>Add system-level key zeroization, side-channel review, fault response policy, and authenticated-mode negative tests before production security deployment.</p></div>
+          </div>
+          <div class="callout security"><strong>SECURITY</strong>This documentation describes functional RTL behavior. Production certification requires threat modeling, implementation hardening, and expanded compliance vector testing.</div>
+        </section>
+
+        <section id="deliverables">
+          <p class="section-kicker">Package Contents</p>
+          <h2>Deliverables</h2>
+          <div class="pre-wrap">
+            <pre><code>aes_256/
+├── inc/
+│   ├── aes256_defines.svh
+│   └── aes256_undefines.svh
+├── rtl/
+│   ├── aes256_wrapper.sv
+│   ├── aes256_axi4_interface.sv
+│   ├── aes256_top_core.sv
+│   ├── aes256_key_expansion.sv
+│   ├── aes256_enc_datapath.sv
+│   ├── aes256_dec_datapath.sv
+│   ├── aes256_mode_ecb.sv
+│   ├── aes256_mode_cbc.sv
+│   ├── aes256_mode_ctr.sv
+│   ├── aes256_mode_cfb.sv
+│   ├── aes256_mode_ofb.sv
+│   └── aes256_mode_gcm.sv
+├── uvm/
+│   ├── agent/
+│   ├── driver/
+│   ├── monitor/
+│   ├── scoreboard/
+│   ├── sequences/
+│   ├── tests/
+│   └── tb/
+├── docs/
+│   └── index.html
+├── filelist.f
+├── Makefile
+└── README.md</code></pre>
+          </div>
+        </section>
+
+        <footer>
+          <strong>AES-256 Cryptographic IP Core</strong> · Version <code>0x0001_0000</code> · Generated 2026-06-25.
+          Documentation generated from RTL + UVM sources for GitHub Pages.
+        </footer>
+      </div>
+    </main>
+  </div>
+
+  <button class="to-top" id="toTop" aria-label="Back to top">↑</button>
+
+  <script>
+    const root = document.documentElement;
+    const storedTheme = localStorage.getItem("aes-doc-theme");
+    const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+    if (storedTheme) {
+      root.dataset.theme = storedTheme;
+    } else if (prefersDark) {
+      root.dataset.theme = "dark";
+    }
+
+    function toggleTheme() {
+      const next = root.dataset.theme === "dark" ? "light" : "dark";
+      root.dataset.theme = next;
+      localStorage.setItem("aes-doc-theme", next);
+    }
+
+    document.getElementById("themeButton").addEventListener("click", toggleTheme);
+    document.getElementById("mobileThemeButton").addEventListener("click", toggleTheme);
+
+    const sidebar = document.getElementById("sidebar");
+    document.getElementById("menuButton").addEventListener("click", () => {
+      sidebar.classList.toggle("open");
+    });
+
+    document.querySelectorAll(".nav a").forEach((link) => {
+      link.addEventListener("click", () => sidebar.classList.remove("open"));
+    });
+
+    document.querySelectorAll("pre").forEach((pre) => {
+      const wrap = pre.parentElement.classList.contains("pre-wrap") ? pre.parentElement : pre;
+      const btn = document.createElement("button");
+      btn.className = "copy-btn";
+      btn.type = "button";
+      btn.textContent = "Copy";
+      btn.addEventListener("click", async () => {
+        await navigator.clipboard.writeText(pre.innerText);
+        btn.textContent = "Copied";
+        setTimeout(() => { btn.textContent = "Copy"; }, 1200);
+      });
+      wrap.appendChild(btn);
+    });
+
+    const links = Array.from(document.querySelectorAll(".nav a"));
+    const linkMap = new Map();
+    links.forEach((link) => {
+      if (!linkMap.has(link.hash)) linkMap.set(link.hash, []);
+      linkMap.get(link.hash).push(link);
+    });
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        links.forEach((link) => link.classList.remove("active"));
+        const activeLinks = linkMap.get("#" + entry.target.id) || [];
+        activeLinks.forEach((link) => link.classList.add("active"));
+      });
+    }, { rootMargin: "-25% 0px -65% 0px", threshold: 0.01 });
+
+    document.querySelectorAll("section[id]").forEach((section) => observer.observe(section));
+
+    const toTop = document.getElementById("toTop");
+    window.addEventListener("scroll", () => {
+      toTop.classList.toggle("show", window.scrollY > 400);
+    });
+    toTop.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
+  </script>
+</body>
 </html>
