@@ -1297,6 +1297,6 @@
   <!-- WaveDrom rendering library -->
   <script src="https://cdn.jsdelivr.net/npm/wavedrom@3.5.0/skins/default.js" type="text/javascript"></script>
   <script src="https://cdn.jsdelivr.net/npm/wavedrom@3.5.0/wavedrom.min.js" type="text/javascript"></script>
-  <script>WaveDrom.ProcessAll();</script>
+  <script>window.addEventListener('load', function() { WaveDrom.ProcessAll(); });</script>
 </body>
 </html>
