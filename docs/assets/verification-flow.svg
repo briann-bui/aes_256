@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="520" viewBox="0 0 1180 520" role="img" aria-label="AES-256 UVM verification flow">
+  <defs>
+    <style>
+      .bg{fill:#ffffff}.box{fill:#f8fafc;stroke:#98a2b3;stroke-width:2}.seq{fill:#e0f2fe;stroke:#0284c7;stroke-width:2}.uvm{fill:#ecfdf3;stroke:#16a34a;stroke-width:2}.dut{fill:#fff7ed;stroke:#c2410c;stroke-width:2}.score{fill:#fce7f3;stroke:#be185d;stroke-width:2}.txt{font:700 20px Arial, sans-serif;fill:#172033}.small{font:500 14px Arial, sans-serif;fill:#475467}.line{stroke:#475467;stroke-width:3;fill:none;marker-end:url(#arrow)}
+    </style>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M2 2 L10 6 L2 10 Z" fill="#475467"/></marker>
+  </defs>
+  <rect class="bg" width="1180" height="520" rx="14"/>
+  <text x="42" y="54" class="txt">UVM Verification Environment</text>
+  <text x="42" y="82" class="small">Directed vectors, register tests, mode round trips, IRQ checks, back-to-back traffic, and AXI error behavior</text>
+
+  <rect x="42" y="145" width="210" height="150" rx="10" class="seq"/>
+  <text x="92" y="186" class="txt">Tests</text>
+  <text x="70" y="220" class="small">base/all/ecb/cbc</text>
+  <text x="70" y="246" class="small">gcm/irq/b2b/axi</text>
+
+  <rect x="315" y="128" width="210" height="184" rx="10" class="uvm"/>
+  <text x="370" y="170" class="txt">Sequences</text>
+  <text x="344" y="204" class="small">AXI writes and reads</text>
+  <text x="344" y="230" class="small">key load wait</text>
+  <text x="344" y="256" class="small">block command issue</text>
+
+  <rect x="590" y="128" width="210" height="184" rx="10" class="uvm"/>
+  <text x="665" y="170" class="txt">Agent</text>
+  <text x="620" y="204" class="small">driver</text>
+  <text x="620" y="230" class="small">monitor</text>
+  <text x="620" y="256" class="small">sequencer</text>
+
+  <rect x="865" y="128" width="230" height="184" rx="10" class="dut"/>
+  <text x="950" y="170" class="txt">DUT</text>
+  <text x="903" y="204" class="small">aes256_wrapper</text>
+  <text x="903" y="230" class="small">AXI4-Lite interface</text>
+  <text x="903" y="256" class="small">AES core</text>
+
+  <rect x="590" y="370" width="505" height="86" rx="10" class="score"/>
+  <text x="745" y="407" class="txt">Scoreboard and Log Checks</text>
+  <text x="630" y="433" class="small">Register mirror, expected data checks, UVM_ERROR=0, UVM_FATAL=0</text>
+
+  <path d="M252 220 H315" class="line"/>
+  <path d="M525 220 H590" class="line"/>
+  <path d="M800 220 H865" class="line"/>
+  <path d="M980 312 V370" class="line"/>
+  <path d="M695 312 V370" class="line"/>
+  <path d="M590 410 H510 V274" class="line"/>
+</svg>

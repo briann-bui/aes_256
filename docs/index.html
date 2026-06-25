@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>AES-256 Cryptographic IP Core Documentation</title>
+    <meta name="description" content="Vendor-style architecture, register, integration, and verification guide for the AES-256 IP core.">
+    <link rel="stylesheet" href="assets/styles.css">
+  </head>
+  <body>
+    <div class="layout">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark">AES</div>
+          <h1>AES-256 Cryptographic IP Core</h1>
+          <p>Architecture, software register interface, integration guide, and UVM verification plan.</p>
+        </div>
+        <div class="nav-title">Documentation</div>
+        <nav class="nav" aria-label="Main navigation">
+          <a href="#overview">Overview</a>
+          <a href="#architecture">Architecture</a>
+          <a href="#interface">Top Interface</a>
+          <a href="#registers">Register Map</a>
+          <a href="#programming">Programming Model</a>
+          <a href="#modes">Modes</a>
+          <a href="#timing">Timing</a>
+          <a href="#verification">Verification</a>
+          <a href="#integration">Integration Notes</a>
+          <a href="#deliverables">Deliverables</a>
+        </nav>
+      </aside>
+
+      <main class="main">
+        <header class="hero">
+          <p class="eyebrow">SystemVerilog IP Datasheet</p>
+          <h2>AES-256 Cryptographic IP Core</h2>
+          <p class="hero-copy">
+            Synthesizable AES-256 encryption core with AXI4-Lite register access,
+            128-bit block processing, multi-mode operation, interrupt generation,
+            and a UVM verification environment.
+          </p>
+          <div class="quick-spec" aria-label="Quick specifications">
+            <div><span>Algorithm</span><strong>AES-256</strong></div>
+            <div><span>Interface</span><strong>AXI4-Lite</strong></div>
+            <div><span>Data Block</span><strong>128 bit</strong></div>
+            <div><span>IP Version</span><strong>0x0001_0000</strong></div>
+          </div>
+        </header>
+
+        <div class="content">
+          <section id="overview">
+            <h2>Overview</h2>
+            <p class="lead">
+              This IP implements an AES-256 hardware accelerator intended for SoC and FPGA integration.
+              The software-facing wrapper exposes a compact AXI4-Lite register map, while the internal
+              core uses a 128-bit block datapath, AES-256 key expansion, and per-mode processing blocks.
+            </p>
+            <div class="grid-3">
+              <div class="card">
+                <div class="metric">6</div>
+                <h3>Operating Modes</h3>
+                <p>ECB, CBC, CTR, CFB, OFB, and GCM are decoded from the 3-bit mode field.</p>
+              </div>
+              <div class="card">
+                <div class="metric">14</div>
+                <h3>AES Rounds</h3>
+                <p>AES-256 uses 14 algorithm rounds with expanded round keys held inside the core.</p>
+              </div>
+              <div class="card">
+                <div class="metric">32</div>
+                <h3>Register Width</h3>
+                <p>The control plane uses 32-bit AXI4-Lite words and an 8-bit address space.</p>
+              </div>
+            </div>
+          </section>
+
+          <section id="architecture">
+            <h2>Architecture</h2>
+            <p class="lead">
+              The top-level wrapper contains an AXI4-Lite register interface and an AES core. Software
+              programs key, IV, input data, AAD, mode, direction, and interrupt enable bits through the
+              register map. The register interface issues one-block commands to the core and captures
+              output blocks and GCM tags for software reads.
+            </p>
+            <img class="diagram" src="assets/architecture.svg" alt="Block diagram of the AES-256 IP architecture">
+            <div class="grid-2">
+              <div class="card">
+                <h3>Control Plane</h3>
+                <p>
+                  <code>aes256_axi4_interface</code> decodes AXI4-Lite reads and writes, stores key/IV/data
+                  words, exposes status and IRQ state, and presents command strobes to the core.
+                </p>
+              </div>
+              <div class="card">
+                <h3>Data Plane</h3>
+                <p>
+                  <code>aes256_top_core</code> expands the 256-bit key, routes traffic to the selected
+                  mode engine, and returns a 128-bit result block with valid/last signaling.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <section id="interface">
+            <h2>Top Interface</h2>
+            <p class="lead">
+              The integration boundary is <code>aes256_wrapper</code>. Clock and reset use
+              <code>i_aes_aclk</code> and active-low asynchronous reset <code>i_aes_aresetn</code>.
+              The host interface is AXI4-Lite with one interrupt output.
+            </p>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>Group</th><th>Signals</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Clock/reset</td>
+                    <td><code>i_aes_aclk</code>, <code>i_aes_aresetn</code></td>
+                    <td>Single synchronous clock domain with active-low reset.</td>
+                  </tr>
+                  <tr>
+                    <td>Write address/data</td>
+                    <td><code>AWADDR/AWVALID/AWREADY</code>, <code>WDATA/WSTRB/WVALID/WREADY</code></td>
+                    <td>AXI4-Lite write command and data channels.</td>
+                  </tr>
+                  <tr>
+                    <td>Write response</td>
+                    <td><code>BRESP/BVALID/BREADY</code></td>
+                    <td>Write completion and response status.</td>
+                  </tr>
+                  <tr>
+                    <td>Read address/data</td>
+                    <td><code>ARADDR/ARVALID/ARREADY</code>, <code>RDATA/RRESP/RVALID/RREADY</code></td>
+                    <td>AXI4-Lite read command and data channels.</td>
+                  </tr>
+                  <tr>
+                    <td>Interrupt</td>
+                    <td><code>o_aes_irq</code></td>
+                    <td>Asserted when enabled output-data or GCM-tag events are pending.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section id="registers">
+            <h2>Register Map</h2>
+            <p class="lead">
+              All registers are 32-bit wide and word aligned. Multiword fields are exposed as consecutive
+              32-bit words: key uses eight words, while IV, DIN, DOUT, AAD, and TAG use four words each.
+            </p>
+            <img class="diagram" src="assets/register-map.svg" alt="AXI4-Lite register map overview">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>Address</th><th>Name</th><th>Access</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td><code>0x00</code></td><td>CTRL</td><td>RW</td><td>Start, direction, and mode control.</td></tr>
+                  <tr><td><code>0x04</code></td><td>STATUS</td><td>RO</td><td>Busy, done, key-ready, and error status.</td></tr>
+                  <tr><td><code>0x08</code></td><td>IRQ_EN</td><td>RW</td><td>Interrupt enable bits.</td></tr>
+                  <tr><td><code>0x0C</code></td><td>IRQ_STAT</td><td>RW1C</td><td>Interrupt pending bits, write one to clear.</td></tr>
+                  <tr><td><code>0x10-0x2C</code></td><td>KEY0..KEY7</td><td>WO/RW</td><td>256-bit AES key.</td></tr>
+                  <tr><td><code>0x30-0x3C</code></td><td>IV0..IV3</td><td>WO/RW</td><td>128-bit IV, nonce, or counter seed.</td></tr>
+                  <tr><td><code>0x40-0x4C</code></td><td>DIN0..DIN3</td><td>WO/RW</td><td>128-bit plaintext or ciphertext input block.</td></tr>
+                  <tr><td><code>0x50-0x5C</code></td><td>DOUT0..DOUT3</td><td>RO</td><td>128-bit output block.</td></tr>
+                  <tr><td><code>0x60-0x6C</code></td><td>AAD0..AAD3</td><td>WO/RW</td><td>GCM additional authenticated data block.</td></tr>
+                  <tr><td><code>0x70-0x7C</code></td><td>TAG0..TAG3</td><td>RO</td><td>128-bit GCM authentication tag.</td></tr>
+                  <tr><td><code>0x80</code></td><td>DIN_CTRL</td><td>RW</td><td>Data-last and AAD-last block markers.</td></tr>
+                  <tr><td><code>0x84</code></td><td>VERSION</td><td>RO</td><td>IP version, currently <code>0x0001_0000</code>.</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <h3>CTRL Register</h3>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>Bits</th><th>Name</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td><code>[0]</code></td><td>START</td><td>Write one to issue a block command after key, IV, and data are programmed.</td></tr>
+                  <tr><td><code>[1]</code></td><td>ENC_DEC</td><td><code>1</code> selects encryption, <code>0</code> selects decryption for supported modes.</td></tr>
+                  <tr><td><code>[4:2]</code></td><td>MODE</td><td>Mode encoding: ECB=0, CBC=1, CTR=2, CFB=3, OFB=4, GCM=5.</td></tr>
+                  <tr><td><code>[31:5]</code></td><td>RESERVED</td><td>Write zero and ignore on read.</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <h3>STATUS and IRQ Bits</h3>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>Register</th><th>Bit</th><th>Name</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>STATUS</td><td><code>0</code></td><td>BUSY</td><td>Core is processing or key expansion is not ready.</td></tr>
+                  <tr><td>STATUS</td><td><code>1</code></td><td>DONE</td><td>Output block or tag event has completed.</td></tr>
+                  <tr><td>STATUS</td><td><code>2</code></td><td>KEY_READY</td><td>Expanded key is available for block processing.</td></tr>
+                  <tr><td>STATUS</td><td><code>3</code></td><td>ERR</td><td>Reserved error indicator.</td></tr>
+                  <tr><td>IRQ_EN/IRQ_STAT</td><td><code>0</code></td><td>DOUT_VALID</td><td>Output data valid event.</td></tr>
+                  <tr><td>IRQ_EN/IRQ_STAT</td><td><code>1</code></td><td>TAG_VALID</td><td>GCM tag valid event.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section id="programming">
+            <h2>Programming Model</h2>
+            <p class="lead">
+              Software operates the IP as a register-driven block accelerator. Program key material first,
+              wait for key expansion, then issue one 128-bit block command at a time.
+            </p>
+            <pre><code>1. Write CTRL with START=0, ENC_DEC, and MODE.
+2. Write KEY0..KEY7.
+3. Poll STATUS.KEY_READY until it is set.
+4. For IV-based modes, write IV0..IV3.
+5. For GCM, optionally write AAD0..AAD3 and set DIN_CTRL.aad_last.
+6. Write DIN0..DIN3 and set DIN_CTRL.din_last as needed.
+7. Write CTRL.START=1 with the selected ENC_DEC and MODE.
+8. Poll STATUS.DONE or wait for o_aes_irq.
+9. Read DOUT0..DOUT3. For GCM, read TAG0..TAG3 when tag IRQ is pending.
+10. Clear IRQ_STAT by writing one to pending bits.</code></pre>
+            <div class="callout">
+              Keep mode, direction, key, and IV stable while the core is busy. For streaming use cases,
+              issue blocks in order and only mark <code>din_last</code> on the final block of the message.
+            </div>
+          </section>
+
+          <section id="modes">
+            <h2>Modes</h2>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>Encoding</th><th>Mode</th><th>IV Required</th><th>Direction Support</th><th>Notes</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td><code>0b000</code></td><td>ECB</td><td>No</td><td>Encrypt and decrypt</td><td>Independent block transform.</td></tr>
+                  <tr><td><code>0b001</code></td><td>CBC</td><td>Yes</td><td>Encrypt and decrypt</td><td>Chained block mode using the previous ciphertext block.</td></tr>
+                  <tr><td><code>0b010</code></td><td>CTR</td><td>Yes</td><td>Symmetric stream transform</td><td>Counter-mode keystream generation.</td></tr>
+                  <tr><td><code>0b011</code></td><td>CFB</td><td>Yes</td><td>Symmetric stream transform</td><td>Feedback mode using AES encryption datapath.</td></tr>
+                  <tr><td><code>0b100</code></td><td>OFB</td><td>Yes</td><td>Symmetric stream transform</td><td>Output feedback keystream generation.</td></tr>
+                  <tr><td><code>0b101</code></td><td>GCM</td><td>Yes</td><td>Authenticated encryption flow</td><td>CTR-style data path with GHASH tag generation.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section id="timing">
+            <h2>Timing</h2>
+            <p class="lead">
+              The core is an iterative implementation optimized for compact RTL and deterministic control.
+              Key expansion must complete before input blocks are submitted.
+            </p>
+            <div class="grid-3">
+              <div class="card">
+                <h3>Key Expansion</h3>
+                <p>Generates 15 round keys for AES-256. Software should poll <code>STATUS.KEY_READY</code>.</p>
+              </div>
+              <div class="card">
+                <h3>Block Latency</h3>
+                <p>One 128-bit input block is processed through a 14-round AES datapath.</p>
+              </div>
+              <div class="card">
+                <h3>Interrupt Latency</h3>
+                <p><code>IRQ_STAT.DOUT_VALID</code> or <code>IRQ_STAT.TAG_VALID</code> is set when the corresponding result is captured.</p>
+              </div>
+            </div>
+          </section>
+
+          <section id="verification">
+            <h2>Verification</h2>
+            <p class="lead">
+              The verification environment is organized as a UVM AXI4-Lite testbench with agent, driver,
+              monitor, scoreboard, reusable sequences, and directed tests.
+            </p>
+            <img class="diagram" src="assets/verification-flow.svg" alt="UVM verification flow diagram">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>Test</th><th>Purpose</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td><code>aes256_reg_test</code></td><td>Reset values, version read, register access, and unmapped access behavior.</td></tr>
+                  <tr><td><code>aes256_ecb_vector_test</code></td><td>AES-256 ECB known-answer encryption/decryption vector.</td></tr>
+                  <tr><td><code>aes256_cbc_roundtrip_test</code></td><td>CBC encrypt-to-decrypt round trip with key and IV reload.</td></tr>
+                  <tr><td><code>aes256_modes_roundtrip_test</code></td><td>Round-trip coverage for ECB, CBC, CTR, CFB, and OFB.</td></tr>
+                  <tr><td><code>aes256_gcm_smoke_test</code></td><td>GCM data output, tag output, and tag interrupt smoke coverage.</td></tr>
+                  <tr><td><code>aes256_irq_test</code></td><td>Data-valid interrupt enable, pending, and write-one-to-clear behavior.</td></tr>
+                  <tr><td><code>aes256_b2b_test</code></td><td>Back-to-back register-driven block commands.</td></tr>
+                  <tr><td><code>aes256_axi_error_test</code></td><td>AXI response behavior for invalid or edge-case accesses.</td></tr>
+                  <tr><td><code>aes256_all_test</code></td><td>Regression wrapper for the directed suite.</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <pre><code>make lint
+make compile
+make run UVM_TEST=aes256_all_test
+make run UVM_TEST=aes256_ecb_vector_test
+make coverage UVM_TEST=aes256_all_test</code></pre>
+            <p>
+              Current local regression status: <span class="status-ok">UVM_ERROR = 0, UVM_FATAL = 0</span>
+              after running the ModelSim UVM flow.
+            </p>
+          </section>
+
+          <section id="integration">
+            <h2>Integration Notes</h2>
+            <div class="grid-2">
+              <div class="card">
+                <h3>Reset and Clock</h3>
+                <p>
+                  Drive <code>i_aes_aresetn</code> low during system reset. All AXI and core state must be
+                  considered invalid until reset is released and software initializes the register set.
+                </p>
+              </div>
+              <div class="card">
+                <h3>AXI4-Lite Access</h3>
+                <p>
+                  Use 32-bit aligned writes. Program all words of a multiword field before asserting
+                  <code>CTRL.START</code>.
+                </p>
+              </div>
+              <div class="card">
+                <h3>Interrupt Handling</h3>
+                <p>
+                  Enable desired event bits in <code>IRQ_EN</code>. On interrupt, read <code>IRQ_STAT</code>,
+                  service DOUT/TAG registers, then clear pending bits with write-one-to-clear.
+                </p>
+              </div>
+              <div class="card">
+                <h3>Security Hygiene</h3>
+                <p>
+                  The current RTL is a functional cryptographic accelerator. Production deployments should
+                  add side-channel analysis, key zeroization policy, fault response, and full NIST vector coverage.
+                </p>
+              </div>
+            </div>
+            <div class="callout warn">
+              GCM is covered by smoke-level UVM checks in this repository. Before using GCM in a production
+              product, extend the regression with official authenticated-encryption test vectors and negative
+              tag validation scenarios.
+            </div>
+          </section>
+
+          <section id="deliverables">
+            <h2>Deliverables</h2>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>Path</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td><code>rtl/</code></td><td>Synthesizable AES-256 RTL, mode engines, AXI wrapper, and package.</td></tr>
+                  <tr><td><code>inc/</code></td><td>Register map, mode encoding, field definitions, and IP version macros.</td></tr>
+                  <tr><td><code>uvm/</code></td><td>UVM verification environment, sequences, tests, scoreboard, and testbench top.</td></tr>
+                  <tr><td><code>Makefile</code></td><td>Verilator lint and ModelSim compile/run/coverage flow.</td></tr>
+                  <tr><td><code>docs/</code></td><td>GitHub Pages documentation site.</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <h3>GitHub Pages Setup</h3>
+            <pre><code>Repository Settings
+Pages
+Build and deployment: Deploy from a branch
+Branch: main
+Folder: /docs</code></pre>
+          </section>
+
+          <footer class="footer">
+            <p>
+              AES-256 Cryptographic IP Core documentation. Generated from the repository RTL,
+              register definitions, UVM environment, and build flow.
+            </p>
+          </footer>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

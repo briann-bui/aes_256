@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1320" height="760" viewBox="0 0 1320 760" role="img" aria-label="AES-256 IP architecture diagram">
+  <defs>
+    <style>
+      .bg{fill:#f8fafc}.bus{fill:#dbeafe;stroke:#1d4ed8}.reg{fill:#ecfdf3;stroke:#15803d}.core{fill:#fff7ed;stroke:#c2410c}.mode{fill:#f0f9ff;stroke:#0369a1}.gcm{fill:#fdf2f8;stroke:#be185d}.txt{font:600 22px Arial, sans-serif;fill:#172033}.small{font:500 16px Arial, sans-serif;fill:#475467}.pin{font:500 14px Arial, sans-serif;fill:#475467}.line{stroke:#475467;stroke-width:3;fill:none;marker-end:url(#arrow)}.dash{stroke:#667085;stroke-width:3;stroke-dasharray:8 7;fill:none;marker-end:url(#arrow)}
+    </style>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M2 2 L10 6 L2 10 Z" fill="#475467"/>
+    </marker>
+  </defs>
+  <rect class="bg" width="1320" height="760" rx="18"/>
+  <text x="48" y="54" class="txt">AES-256 Cryptographic IP Core</text>
+  <text x="48" y="82" class="small">AXI4-Lite control plane with 128-bit block datapath and six operating modes</text>
+
+  <rect x="50" y="150" width="210" height="330" rx="12" class="bus"/>
+  <text x="86" y="196" class="txt">SoC Host</text>
+  <text x="82" y="232" class="small">AXI4-Lite master</text>
+  <text x="82" y="264" class="pin">AW/W/B write channel</text>
+  <text x="82" y="294" class="pin">AR/R read channel</text>
+  <text x="82" y="324" class="pin">IRQ input</text>
+
+  <rect x="340" y="128" width="265" height="375" rx="12" class="reg"/>
+  <text x="386" y="176" class="txt">AXI Register File</text>
+  <text x="374" y="212" class="small">aes256_axi4_interface</text>
+  <text x="376" y="252" class="pin">CTRL / STATUS / IRQ</text>
+  <text x="376" y="282" class="pin">KEY[255:0]</text>
+  <text x="376" y="312" class="pin">IV[127:0]</text>
+  <text x="376" y="342" class="pin">DIN / DOUT blocks</text>
+  <text x="376" y="372" class="pin">AAD / TAG for GCM</text>
+  <text x="376" y="420" class="pin">One-block command issue</text>
+
+  <rect x="695" y="90" width="560" height="560" rx="16" class="core"/>
+  <text x="888" y="138" class="txt">aes256_top_core</text>
+  <text x="838" y="170" class="small">Mode router, key schedule, datapaths, status and IRQ</text>
+
+  <rect x="738" y="216" width="220" height="126" rx="10" class="mode"/>
+  <text x="775" y="262" class="txt">Key Expansion</text>
+  <text x="782" y="294" class="small">15 round keys</text>
+  <text x="782" y="322" class="pin">AES-256, Nr=14</text>
+
+  <rect x="1010" y="216" width="190" height="126" rx="10" class="mode"/>
+  <text x="1048" y="262" class="txt">Mode Mux</text>
+  <text x="1042" y="294" class="small">ECB/CBC/CTR</text>
+  <text x="1042" y="322" class="small">CFB/OFB/GCM</text>
+
+  <rect x="738" y="408" width="200" height="118" rx="10" class="mode"/>
+  <text x="782" y="453" class="txt">ENC DP</text>
+  <text x="778" y="485" class="small">14 rounds</text>
+
+  <rect x="972" y="408" width="200" height="118" rx="10" class="mode"/>
+  <text x="1016" y="453" class="txt">DEC DP</text>
+  <text x="1012" y="485" class="small">14 rounds</text>
+
+  <rect x="838" y="570" width="234" height="60" rx="10" class="gcm"/>
+  <text x="886" y="607" class="txt">GCM GHASH</text>
+
+  <path d="M260 278 H340" class="line"/>
+  <path d="M340 352 H260" class="dash"/>
+  <path d="M605 276 H738" class="line"/>
+  <path d="M605 388 H738" class="line"/>
+  <path d="M958 276 H1010" class="line"/>
+  <path d="M1105 342 V408" class="line"/>
+  <path d="M848 342 V408" class="line"/>
+  <path d="M938 466 H972" class="line"/>
+  <path d="M955 526 V570" class="dash"/>
+  <path d="M1172 466 H1238 V672 H228 V480" class="dash"/>
+  <text x="278" y="262" class="small">AXI4-Lite</text>
+  <text x="618" y="258" class="small">control</text>
+  <text x="618" y="370" class="small">128-bit data</text>
+  <text x="1090" y="694" class="small">DOUT/TAG/IRQ</text>
+</svg>
